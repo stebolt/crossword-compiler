@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import type { Direction } from '../../../shared/types';
 import type { Slot } from '../lib/cluePanelLogic';
 import { findActiveSlot } from '../lib/cluePanelLogic';
@@ -26,6 +26,12 @@ const STATUS_COLOR: Record<ClueStatus, string> = {
   unwritten: 'text-gray-300 hover:text-gray-500',
   drafted:   'text-amber-400 hover:text-amber-500',
   confirmed: 'text-green-500 hover:text-green-600',
+};
+
+const ANSWER_COLOR: Record<ClueStatus, string> = {
+  unwritten: 'text-gray-400',
+  drafted:   'text-amber-500',
+  confirmed: 'text-green-600',
 };
 
 export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCursor, setDirection }: Props) {
@@ -70,7 +76,7 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
       <div
         key={key}
         ref={isActive ? activeRef : undefined}
-        className={`border-b border-gray-100 px-3 py-2 ${isActive ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+        className={`border-b border-gray-100 px-3 py-1 ${isActive ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
       >
         <div className="flex items-start gap-2">
           {/* Number + direction — clicking jumps grid cursor */}
@@ -83,8 +89,15 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
 
           {/* Answer preview + clue input */}
           <div className="flex-1 min-w-0">
-            <div className="font-mono text-xs tracking-widest text-gray-300 mb-0.5 select-none">
-              {slot.answer}
+            <div className="flex items-baseline gap-2 mb-0.5">
+              <div className={`font-mono text-xs tracking-widest select-none ${ANSWER_COLOR[entry.status]}`}>
+                {slot.answer}
+              </div>
+              <EnumerationInput
+                value={entry.enumeration}
+                slotLength={slot.length}
+                onChange={v => updateClue(slot.num, slot.dir, { enumeration: v })}
+              />
             </div>
             <AutoTextarea
               value={entry.clue}
@@ -111,48 +124,96 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
           </button>
         </div>
 
-        {/* Notes */}
-        <div className="mt-1 pl-7">
-          <button
-            onClick={() => toggleNotes(key)}
-            className="text-xs text-gray-300 hover:text-gray-500"
-          >
-            {notesOpen ? '▾' : '▸'} notes
-            {entry.notes && !notesOpen && <span className="ml-1 text-amber-400">•</span>}
-          </button>
-          {notesOpen && (
-            <AutoTextarea
-              value={entry.notes}
-              placeholder="Scratch pad…"
-              onChange={v => updateClue(slot.num, slot.dir, { notes: v })}
-              className="mt-1 w-full text-xs bg-transparent outline-none border-b border-gray-200 text-gray-500 placeholder-gray-300 focus:border-blue-300 leading-snug"
-            />
-          )}
-        </div>
+        {/* Notes — only rendered when active or notes exist */}
+        {(isActive || notesOpen || entry.notes) && (
+          <div className="mt-0.5 pl-7">
+            <button
+              onClick={() => toggleNotes(key)}
+              className="text-xs text-gray-300 hover:text-gray-500"
+            >
+              {notesOpen ? '▾' : '▸'} notes
+              {entry.notes && !notesOpen && <span className="ml-1 text-amber-400">•</span>}
+            </button>
+            {notesOpen && (
+              <AutoTextarea
+                value={entry.notes}
+                placeholder="Scratch pad…"
+                onChange={v => updateClue(slot.num, slot.dir, { notes: v })}
+                className="mt-1 w-full text-xs bg-transparent outline-none border-b border-gray-200 text-gray-500 placeholder-gray-300 focus:border-blue-300 leading-snug"
+              />
+            )}
+          </div>
+        )}
       </div>
     );
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 border border-gray-200 rounded-md bg-white overflow-hidden">
-      <div className="flex-1 overflow-y-auto">
-        {acrossSlots.length > 0 && (
-          <>
-            <div className="bg-gray-50 border-b border-gray-200 px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Across
-            </div>
-            {acrossSlots.map(renderSlot)}
-          </>
-        )}
-        {downSlots.length > 0 && (
-          <>
-            <div className="bg-gray-50 border-b border-gray-200 px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Down
-            </div>
-            {downSlots.map(renderSlot)}
-          </>
-        )}
+    <div className="flex min-h-0 w-fit border border-gray-200 rounded-md bg-white overflow-hidden">
+      {/* Across column */}
+      <div className="w-[544px] flex-shrink-0 flex flex-col border-r border-gray-200 overflow-hidden">
+        <div className="bg-gray-50 border-b border-gray-200 px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          Across
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {acrossSlots.map(renderSlot)}
+        </div>
       </div>
+
+      {/* Down column */}
+      <div className="w-[544px] flex-shrink-0 flex flex-col overflow-hidden">
+        <div className="bg-gray-50 border-b border-gray-200 px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          Down
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {downSlots.map(renderSlot)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EnumerationInput({ value, slotLength, onChange }: {
+  value: number[];
+  slotLength: number;
+  onChange: (v: number[]) => void;
+}) {
+  const [raw, setRaw] = useState(() => value.length ? value.join(',') : '');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setRaw(value.length ? value.join(',') : '');
+    setError(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value.join(',')]);
+
+  const commit = useCallback((str: string) => {
+    const trimmed = str.trim();
+    if (!trimmed) { onChange([]); setError(null); return; }
+    const parts = trimmed.split(',').map(p => parseInt(p.trim(), 10));
+    if (parts.some(n => isNaN(n) || n <= 0)) { setError('use numbers e.g. 3,5,4'); return; }
+    const sum = parts.reduce((a, b) => a + b, 0);
+    if (sum !== slotLength) { setError(`sums to ${sum}, need ${slotLength}`); return; }
+    setError(null);
+    onChange(parts);
+  }, [onChange, slotLength]);
+
+  return (
+    <div className="flex items-center gap-1 mt-1 min-h-[1.25rem]">
+      <span className="text-xs text-gray-400 select-none">(</span>
+      <input
+        value={raw}
+        onChange={e => { setRaw(e.target.value); setError(null); }}
+        onBlur={e => commit(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commit(raw); (e.target as HTMLInputElement).blur(); } }}
+        placeholder={`${slotLength}`}
+        aria-label="Word lengths e.g. 3,5,4"
+        className={`text-xs w-[5ch] bg-transparent outline-none border-b leading-none
+          ${error ? 'border-red-400 text-red-500 placeholder-red-300'
+                  : 'border-transparent hover:border-gray-200 focus:border-blue-300 text-gray-500 placeholder-gray-300'}`}
+      />
+      <span className="text-xs text-gray-400 select-none">)</span>
+      {error && <span className="text-xs text-red-400">{error}</span>}
     </div>
   );
 }

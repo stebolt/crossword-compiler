@@ -29,14 +29,6 @@ export default function App() {
       {/* Header */}
       <header className="bg-gray-900 text-white px-5 py-3 flex items-center gap-4">
         <h1 className="text-lg font-semibold tracking-tight flex-shrink-0">Crossword Compiler</h1>
-        <div className="w-px h-5 bg-gray-600 flex-shrink-0" />
-        <input
-          value={meta.title}
-          onChange={e => setTitle(e.target.value)}
-          className="bg-transparent text-white text-sm border-b border-transparent hover:border-gray-500 focus:border-white focus:outline-none placeholder-gray-500 min-w-0 w-48"
-          placeholder="Untitled"
-          aria-label="Puzzle title"
-        />
       </header>
 
       {/* Toolbar */}
@@ -62,8 +54,15 @@ export default function App() {
 
       {/* Main — two columns */}
       <main className="flex-1 flex gap-5 p-5 overflow-hidden min-h-0">
-        {/* Left — grid + status */}
+        {/* Left — grid + helpers */}
         <div className="flex flex-col gap-3 flex-shrink-0">
+          <input
+            value={meta.title}
+            onChange={e => setTitle(e.target.value)}
+            className="text-2xl font-bold text-gray-800 bg-transparent border-b-2 border-transparent hover:border-gray-300 focus:border-gray-500 focus:outline-none placeholder-gray-300 w-[544px]"
+            placeholder="Untitled"
+            aria-label="Puzzle title"
+          />
           <Grid
             grid={grid}
             cursor={cursor}
@@ -80,10 +79,12 @@ export default function App() {
             {cursorNum != null && <span>{cursorNum} {direction}</span>}
             <span>({cursor.row + 1}, {cursor.col + 1})</span>
           </div>
+          <AnagramHelper />
+          <WordplayHelper />
         </div>
 
-        {/* Right — clue workspace */}
-        <div className="flex-1 flex flex-col gap-3 min-h-0 min-w-0">
+        {/* Right — clue panel */}
+        <div className="flex flex-col min-h-0">
           <CluePanel
             slots={slots}
             getClue={getClue}
@@ -93,8 +94,6 @@ export default function App() {
             setCursor={setCursor}
             setDirection={setDirection}
           />
-          <AnagramHelper />
-          <WordplayHelper />
         </div>
       </main>
     </div>

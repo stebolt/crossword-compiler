@@ -7,13 +7,14 @@ export interface ClueEntry {
   clue: string;
   notes: string;
   status: ClueStatus;
+  enumeration: number[];
 }
 
 type ClueMap = Record<string, ClueEntry>;
 
 const LS_KEY = 'cxc-clues-v1';
 
-export const DEFAULT_ENTRY: ClueEntry = { clue: '', notes: '', status: 'unwritten' };
+export const DEFAULT_ENTRY: ClueEntry = { clue: '', notes: '', status: 'unwritten', enumeration: [] };
 
 export function clueKey(num: number, dir: Direction): string {
   return `${num}-${dir}`;
@@ -36,7 +37,10 @@ export function useClues() {
   }, []);
 
   const getClue = useCallback(
-    (num: number, dir: Direction): ClueEntry => clues[clueKey(num, dir)] ?? DEFAULT_ENTRY,
+    (num: number, dir: Direction): ClueEntry => {
+      const stored = clues[clueKey(num, dir)];
+      return stored ? { ...DEFAULT_ENTRY, ...stored } : DEFAULT_ENTRY;
+    },
     [clues],
   );
 
