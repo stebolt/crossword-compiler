@@ -56,10 +56,9 @@ export function AnagramHelper() {
     <div className="border border-gray-200 rounded-md bg-white">
       <button
         onClick={() => setIsOpen(o => !o)}
-        className="w-full px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center justify-between hover:bg-gray-50 rounded-md"
+        className="w-full px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 hover:text-gray-800 hover:bg-gray-50 rounded-md transition-colors"
       >
-        Anagram Helper
-        <span className="text-gray-400">{isOpen ? '▾' : '▸'}</span>
+        {isOpen ? '▼' : '▶'} Anagram Helper
       </button>
 
       {isOpen && (

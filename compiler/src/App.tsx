@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { TEMPLATES } from './lib/gridLogic';
 import { getSlots } from './lib/cluePanelLogic';
+import { validateCrossword, buildCrossword, downloadJson } from './lib/crosswordExport';
 import { useGrid } from './hooks/useGrid';
 import { useClues } from './hooks/useClues';
 import { useMeta } from './hooks/useMeta';
@@ -10,6 +11,8 @@ import { CluePanel } from './components/CluePanel';
 import { AnagramHelper } from './components/AnagramHelper';
 import { WordplayHelper } from './components/WordplayHelper';
 import { SuggestionsPanel } from './components/SuggestionsPanel';
+import { ExportModal } from './components/ExportModal';
+import type { CrosswordMeta } from '../../shared/types';
 
 export default function App() {
   const {
@@ -24,11 +27,45 @@ export default function App() {
   const slots = useMemo(() => getSlots(grid, numbers), [grid, numbers]);
   const { activeSlot, suggestions } = useAutofill(slots, cursor, direction);
 
+  const [modal, setModal] = useState<
+    | { mode: 'errors'; errors: string[] }
+    | { mode: 'publish'; meta: CrosswordMeta; filename: string }
+    | { mode: 'confirm' }
+    | null
+  >(null);
+
+  function handleExport() {
+    const crossword = buildCrossword(grid, slots, getClue, meta);
+    downloadJson(crossword, `${crossword.meta.id}.json`);
+  }
+
+  function handlePublish() {
+    const { valid, errors } = validateCrossword(slots, getClue);
+    if (!valid) {
+      setModal({ mode: 'errors', errors });
+      return;
+    }
+    const crossword = buildCrossword(grid, slots, getClue, meta);
+    const filename = `${crossword.meta.id}.json`;
+    downloadJson(crossword, filename);
+    setModal({ mode: 'publish', meta: crossword.meta, filename });
+  }
+
   const dirLabel = direction === 'across' ? '→ Across' : '↓ Down';
   const cursorNum = numbers.get(`${cursor.row},${cursor.col}`);
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
+      {modal && (
+        <ExportModal
+          mode={modal.mode}
+          errors={modal.mode === 'errors' ? modal.errors : undefined}
+          publishedMeta={modal.mode === 'publish' ? modal.meta : undefined}
+          filename={modal.mode === 'publish' ? modal.filename : undefined}
+          onClose={() => setModal(null)}
+          onConfirm={modal.mode === 'confirm' ? () => { clearGrid(); resetClues(); setModal(null); } : undefined}
+        />
+      )}
       {/* Header */}
       <header className="bg-gray-900 text-white px-5 py-3 flex items-center gap-4">
         <h1 className="text-lg font-semibold tracking-tight flex-shrink-0">Crossword Compiler</h1>
@@ -48,10 +85,23 @@ export default function App() {
         ))}
         <div className="w-px h-5 bg-gray-200 mx-1" />
         <button
-          onClick={() => { clearGrid(); resetClues(); }}
+          onClick={() => setModal({ mode: 'confirm' })}
           className="px-3 py-1 rounded border border-gray-300 hover:border-red-400 hover:text-red-600 hover:bg-red-50 text-gray-700 transition-colors"
         >
           Clear
+        </button>
+        <div className="w-px h-5 bg-gray-200 mx-1" />
+        <button
+          onClick={handleExport}
+          className="px-3 py-1 rounded border border-gray-300 hover:border-gray-500 hover:bg-gray-50 text-gray-700 transition-colors"
+        >
+          Export JSON
+        </button>
+        <button
+          onClick={handlePublish}
+          className="px-3 py-1 rounded bg-gray-900 text-white hover:bg-gray-700 transition-colors"
+        >
+          Publish
         </button>
       </div>
 
