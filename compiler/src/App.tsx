@@ -87,8 +87,8 @@ export default function App() {
             suggestions={suggestions}
             onFill={fillWord}
           />
-          <AnagramHelper />
           <WordplayHelper />
+          <AnagramHelper />
         </div>
 
         {/* Right — clue panel */}
