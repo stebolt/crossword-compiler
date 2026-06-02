@@ -1,6 +1,6 @@
 import { useRef, useMemo, useEffect } from 'react';
 import type { CellValue, Direction } from '../../../shared/types';
-import { SIZE, getWordCells } from '../lib/gridLogic';
+import { SIZE, getWordCells, mirrorCell } from '../lib/gridLogic';
 
 interface Props {
   grid: CellValue[][];
@@ -143,11 +143,15 @@ export function Grid({
             const isCursor = cursor.row === r && cursor.col === c;
             const isWord = wordCells.has(key);
             const num = numbers.get(key);
+            const [mr, mc] = mirrorCell(r, c);
+            const mirrorVal = grid[mr][mc];
+            const isSymmetricGhost = !isBlack && cell === '' && mirrorVal !== '' && mirrorVal !== '#';
 
             let bg = 'bg-white';
             if (isBlack) bg = 'bg-gray-900';
             else if (isCursor) bg = 'bg-blue-500';
             else if (isWord) bg = 'bg-blue-100';
+            else if (isSymmetricGhost) bg = 'bg-gray-200';
 
             return (
               <div

@@ -14,6 +14,13 @@ export function toggleBlack(grid: CellValue[][], row: number, col: number): Cell
   const next = grid.map(r => [...r]) as CellValue[][];
   const isBlack = next[row][col] === '#';
   const [mr, mc] = mirrorCell(row, col);
+  // Don't allow blacking out a cell whose mirror already has a letter
+  if (!isBlack) {
+    const mirrorVal = next[mr][mc];
+    if (mirrorVal !== '' && mirrorVal !== '#') return grid;
+    const selfVal = next[row][col];
+    if (selfVal !== '' && selfVal !== '#') return grid;
+  }
   next[row][col] = isBlack ? '' : '#';
   next[mr][mc] = isBlack ? '' : '#';
   return next;

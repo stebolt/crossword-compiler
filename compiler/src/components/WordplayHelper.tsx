@@ -30,7 +30,7 @@ export function WordplayHelper() {
     });
 
   return (
-    <div className="border border-gray-200 rounded-md bg-white">
+    <div className="w-[544px] border border-gray-200 rounded-md bg-white">
       <button
         onClick={() => setIsOpen(o => !o)}
         className="w-full px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center justify-between hover:bg-gray-50 rounded-md"

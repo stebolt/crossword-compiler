@@ -14,8 +14,6 @@ interface Props {
   setDirection: (dir: Direction) => void;
 }
 
-const STATUS_CYCLE: ClueStatus[] = ['unwritten', 'drafted', 'confirmed'];
-
 const STATUS_DOT: Record<ClueStatus, string> = {
   unwritten: '○',
   drafted:   '◑',
@@ -23,9 +21,9 @@ const STATUS_DOT: Record<ClueStatus, string> = {
 };
 
 const STATUS_COLOR: Record<ClueStatus, string> = {
-  unwritten: 'text-gray-300 hover:text-gray-500',
-  drafted:   'text-amber-400 hover:text-amber-500',
-  confirmed: 'text-green-500 hover:text-green-600',
+  unwritten: 'text-gray-300 cursor-not-allowed',
+  drafted:   'text-amber-400 hover:text-amber-500 cursor-pointer',
+  confirmed: 'text-green-500 hover:text-green-600 cursor-pointer',
 };
 
 const ANSWER_COLOR: Record<ClueStatus, string> = {
@@ -50,9 +48,9 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
       return next;
     });
 
-  const cycleStatus = (num: number, dir: Direction, current: ClueStatus) => {
-    const next = STATUS_CYCLE[(STATUS_CYCLE.indexOf(current) + 1) % STATUS_CYCLE.length];
-    updateClue(num, dir, { status: next });
+  const cycleStatus = (num: number, dir: Direction, current: ClueStatus, isWordComplete: boolean) => {
+    if (!isWordComplete) return;
+    updateClue(num, dir, { status: current === 'confirmed' ? 'drafted' : 'confirmed' });
   };
 
   const acrossSlots = slots.filter(s => s.dir === 'across');
@@ -71,6 +69,10 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
     const entry = getClue(slot.num, slot.dir);
     const isActive = activeSlot?.num === slot.num && activeSlot?.dir === slot.dir;
     const notesOpen = expandedNotes.has(key);
+    const isWordComplete = !slot.answer.includes('_');
+    const effectiveStatus: ClueStatus = !isWordComplete
+      ? 'unwritten'
+      : entry.status === 'confirmed' ? 'confirmed' : 'drafted';
 
     return (
       <div
@@ -90,7 +92,7 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
           {/* Answer preview + clue input */}
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline gap-2 mb-0.5">
-              <div className={`font-mono text-xs tracking-widest select-none ${ANSWER_COLOR[entry.status]}`}>
+              <div className={`font-mono text-xs tracking-widest select-none ${ANSWER_COLOR[effectiveStatus]}`}>
                 {slot.answer}
               </div>
               <EnumerationInput
@@ -102,10 +104,7 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
             <AutoTextarea
               value={entry.clue}
               placeholder="Write clue…"
-              onChange={v => updateClue(slot.num, slot.dir, {
-                clue: v,
-                status: entry.status === 'unwritten' && v.trim() ? 'drafted' : entry.status,
-              })}
+              onChange={v => updateClue(slot.num, slot.dir, { clue: v })}
               className={`w-full text-sm bg-transparent outline-none border-b placeholder-gray-300 leading-snug
                 ${isActive
                   ? 'border-blue-300 text-gray-900'
@@ -116,11 +115,12 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
 
           {/* Status toggle */}
           <button
-            onClick={() => cycleStatus(slot.num, slot.dir, entry.status)}
-            title={entry.status}
-            className={`flex-shrink-0 mt-1 text-base leading-none ${STATUS_COLOR[entry.status]}`}
+            onClick={() => cycleStatus(slot.num, slot.dir, entry.status, isWordComplete)}
+            title={effectiveStatus}
+            disabled={!isWordComplete}
+            className={`flex-shrink-0 mt-1 text-base leading-none ${STATUS_COLOR[effectiveStatus]}`}
           >
-            {STATUS_DOT[entry.status]}
+            {STATUS_DOT[effectiveStatus]}
           </button>
         </div>
 
