@@ -1,0 +1,19 @@
+node_modules/
+.env
+.env.local
+.env*.local
+
+# Build outputs
+dist/
+.next/
+out/
+
+# Word lists (can be large — add manually)
+word-lists/*.txt
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/

@@ -1,0 +1,12 @@
+{
+  "name": "crossword-compiler",
+  "private": true,
+  "workspaces": [
+    "compiler",
+    "solver"
+  ],
+  "scripts": {
+    "compiler": "npm run dev --workspace=compiler",
+    "solver": "npm run dev --workspace=solver"
+  }
+}
