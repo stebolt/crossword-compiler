@@ -36,6 +36,6 @@ cd solver && npm install && npm run dev
 
 ## Current Phase
 
-**Phase 1 — Compiler: Grid Editor**
+**Phase 3 — Compiler: Auto-fill** (Phases 1 and 2 complete)
 
 See spec for full phase breakdown.

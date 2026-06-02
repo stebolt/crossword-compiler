@@ -7,6 +7,7 @@ import {
   computeNumbers,
   advanceCursor,
 } from '../lib/gridLogic';
+import type { Slot } from '../lib/cluePanelLogic';
 
 const LS_KEY = 'cxc-grid-v1';
 
@@ -47,6 +48,18 @@ export function useGrid() {
     return advanceCursor(grid, row, col, dir, reverse);
   }, [grid]);
 
+  const fillWord = useCallback((word: string, slot: Slot) => {
+    const next = grid.map(r => [...r]) as CellValue[][];
+    for (let i = 0; i < word.length; i++) {
+      if (slot.dir === 'across') {
+        next[slot.row][slot.col + i] = word[i] as CellValue;
+      } else {
+        next[slot.row + i][slot.col] = word[i] as CellValue;
+      }
+    }
+    setGrid(next);
+  }, [grid, setGrid]);
+
   const applyTemplate = useCallback((templateGrid: CellValue[][]) => {
     setGrid(templateGrid.map(r => [...r]) as CellValue[][]);
     setCursor({ row: 0, col: 0 });
@@ -68,6 +81,7 @@ export function useGrid() {
     numbers,
     toggleBlack,
     setCell,
+    fillWord,
     advance,
     applyTemplate,
     clearGrid,

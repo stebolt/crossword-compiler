@@ -4,15 +4,17 @@ import { getSlots } from './lib/cluePanelLogic';
 import { useGrid } from './hooks/useGrid';
 import { useClues } from './hooks/useClues';
 import { useMeta } from './hooks/useMeta';
+import { useAutofill } from './hooks/useAutofill';
 import { Grid } from './components/Grid';
 import { CluePanel } from './components/CluePanel';
 import { AnagramHelper } from './components/AnagramHelper';
 import { WordplayHelper } from './components/WordplayHelper';
+import { SuggestionsPanel } from './components/SuggestionsPanel';
 
 export default function App() {
   const {
     grid, cursor, setCursor, direction, setDirection,
-    numbers, toggleBlack, setCell, advance,
+    numbers, toggleBlack, setCell, fillWord, advance,
     applyTemplate, clearGrid,
   } = useGrid();
 
@@ -20,6 +22,7 @@ export default function App() {
   const { meta, setTitle } = useMeta();
 
   const slots = useMemo(() => getSlots(grid, numbers), [grid, numbers]);
+  const { activeSlot, suggestions } = useAutofill(slots, cursor, direction);
 
   const dirLabel = direction === 'across' ? '→ Across' : '↓ Down';
   const cursorNum = numbers.get(`${cursor.row},${cursor.col}`);
@@ -79,6 +82,11 @@ export default function App() {
             {cursorNum != null && <span>{cursorNum} {direction}</span>}
             <span>({cursor.row + 1}, {cursor.col + 1})</span>
           </div>
+          <SuggestionsPanel
+            activeSlot={activeSlot}
+            suggestions={suggestions}
+            onFill={fillWord}
+          />
           <AnagramHelper />
           <WordplayHelper />
         </div>
