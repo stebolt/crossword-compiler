@@ -1,6 +1,13 @@
+import { useMemo } from 'react';
 import { TEMPLATES } from './lib/gridLogic';
+import { getSlots } from './lib/cluePanelLogic';
 import { useGrid } from './hooks/useGrid';
+import { useClues } from './hooks/useClues';
+import { useMeta } from './hooks/useMeta';
 import { Grid } from './components/Grid';
+import { CluePanel } from './components/CluePanel';
+import { AnagramHelper } from './components/AnagramHelper';
+import { WordplayHelper } from './components/WordplayHelper';
 
 export default function App() {
   const {
@@ -9,15 +16,27 @@ export default function App() {
     applyTemplate, clearGrid,
   } = useGrid();
 
+  const { getClue, updateClue, resetClues } = useClues();
+  const { meta, setTitle } = useMeta();
+
+  const slots = useMemo(() => getSlots(grid, numbers), [grid, numbers]);
+
   const dirLabel = direction === 'across' ? '→ Across' : '↓ Down';
   const cursorNum = numbers.get(`${cursor.row},${cursor.col}`);
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       {/* Header */}
-      <header className="bg-gray-900 text-white px-5 py-3 flex items-center gap-6">
-        <h1 className="text-lg font-semibold tracking-tight">Crossword Compiler</h1>
-        <span className="text-gray-400 text-sm">Phase 1 — Grid Editor</span>
+      <header className="bg-gray-900 text-white px-5 py-3 flex items-center gap-4">
+        <h1 className="text-lg font-semibold tracking-tight flex-shrink-0">Crossword Compiler</h1>
+        <div className="w-px h-5 bg-gray-600 flex-shrink-0" />
+        <input
+          value={meta.title}
+          onChange={e => setTitle(e.target.value)}
+          className="bg-transparent text-white text-sm border-b border-transparent hover:border-gray-500 focus:border-white focus:outline-none placeholder-gray-500 min-w-0 w-48"
+          placeholder="Untitled"
+          aria-label="Puzzle title"
+        />
       </header>
 
       {/* Toolbar */}
@@ -26,7 +45,7 @@ export default function App() {
         {TEMPLATES.map(t => (
           <button
             key={t.name}
-            onClick={() => applyTemplate(t.grid)}
+            onClick={() => { applyTemplate(t.grid); resetClues(); }}
             className="px-3 py-1 rounded border border-gray-300 hover:border-gray-500 hover:bg-gray-50 text-gray-700 transition-colors"
           >
             {t.name}
@@ -34,17 +53,17 @@ export default function App() {
         ))}
         <div className="w-px h-5 bg-gray-200 mx-1" />
         <button
-          onClick={clearGrid}
+          onClick={() => { clearGrid(); resetClues(); }}
           className="px-3 py-1 rounded border border-gray-300 hover:border-red-400 hover:text-red-600 hover:bg-red-50 text-gray-700 transition-colors"
         >
           Clear
         </button>
       </div>
 
-      {/* Main */}
-      <main className="flex-1 flex gap-8 p-6">
-        {/* Grid + status */}
-        <div className="flex flex-col gap-3">
+      {/* Main — two columns */}
+      <main className="flex-1 flex gap-5 p-5 overflow-hidden min-h-0">
+        {/* Left — grid + status */}
+        <div className="flex flex-col gap-3 flex-shrink-0">
           <Grid
             grid={grid}
             cursor={cursor}
@@ -56,26 +75,27 @@ export default function App() {
             setCell={setCell}
             advance={advance}
           />
-          {/* Status bar */}
           <div className="flex items-center gap-4 text-sm text-gray-500">
             <span className="font-medium text-blue-600">{dirLabel}</span>
-            {cursorNum != null && (
-              <span>{cursorNum} {direction}</span>
-            )}
+            {cursorNum != null && <span>{cursorNum} {direction}</span>}
             <span>({cursor.row + 1}, {cursor.col + 1})</span>
           </div>
         </div>
 
-        {/* Help */}
-        <aside className="text-sm text-gray-500 space-y-1 pt-1 w-48">
-          <p className="font-semibold text-gray-700 mb-2">Keyboard</p>
-          <p><kbd className="kbd">A–Z</kbd> Type letter</p>
-          <p><kbd className="kbd">Space</kbd> Toggle black</p>
-          <p><kbd className="kbd">←↑→↓</kbd> Navigate</p>
-          <p><kbd className="kbd">Bksp</kbd> Clear &amp; back</p>
-          <p><kbd className="kbd">Del</kbd> Clear cell</p>
-          <p className="pt-2 text-gray-400">Click a cell to select.<br />Click again to flip direction.<br />Click a black cell to unblack.</p>
-        </aside>
+        {/* Right — clue workspace */}
+        <div className="flex-1 flex flex-col gap-3 min-h-0 min-w-0">
+          <CluePanel
+            slots={slots}
+            getClue={getClue}
+            updateClue={updateClue}
+            cursor={cursor}
+            direction={direction}
+            setCursor={setCursor}
+            setDirection={setDirection}
+          />
+          <AnagramHelper />
+          <WordplayHelper />
+        </div>
       </main>
     </div>
   );
