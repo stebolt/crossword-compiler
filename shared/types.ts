@@ -15,6 +15,7 @@ export interface Clue {
   row: number;
   col: number;
   length: number;
+  wordLengths?: number[]; // e.g. [3,4,3] for a three-word answer; omitted for single words
 }
 
 export interface CrosswordClues {
