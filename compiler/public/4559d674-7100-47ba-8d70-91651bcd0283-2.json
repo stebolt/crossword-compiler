@@ -1,0 +1,584 @@
+{
+  "meta": {
+    "id": "4559d674-7100-47ba-8d70-91651bcd0283",
+    "title": "Test Puzzle",
+    "author": "Steve",
+    "publishedAt": "2026-06-03",
+    "size": 15
+  },
+  "grid": [
+    [
+      "E",
+      "L",
+      "E",
+      "P",
+      "A",
+      "N",
+      "T",
+      "#",
+      "A",
+      "C",
+      "C",
+      "O",
+      "U",
+      "N",
+      "T"
+    ],
+    [
+      "X",
+      "#",
+      "L",
+      "#",
+      "W",
+      "#",
+      "O",
+      "A",
+      "T",
+      "#",
+      "A",
+      "#",
+      "N",
+      "#",
+      "R"
+    ],
+    [
+      "A",
+      "L",
+      "I",
+      "B",
+      "A",
+      "B",
+      "A",
+      "#",
+      "G",
+      "O",
+      "R",
+      "I",
+      "L",
+      "L",
+      "A"
+    ],
+    [
+      "M",
+      "#",
+      "T",
+      "#",
+      "K",
+      "#",
+      "S",
+      "#",
+      "O",
+      "#",
+      "E",
+      "#",
+      "O",
+      "#",
+      "G"
+    ],
+    [
+      "P",
+      "R",
+      "E",
+      "S",
+      "E",
+      "N",
+      "T",
+      "E",
+      "D",
+      "#",
+      "R",
+      "E",
+      "V",
+      "I",
+      "E"
+    ],
+    [
+      "L",
+      "#",
+      "#",
+      "I",
+      "#",
+      "O",
+      "#",
+      "N",
+      "#",
+      "A",
+      "#",
+      "#",
+      "A",
+      "#",
+      "D"
+    ],
+    [
+      "E",
+      "S",
+      "O",
+      "T",
+      "E",
+      "R",
+      "I",
+      "C",
+      "A",
+      "L",
+      "#",
+      "A",
+      "B",
+      "L",
+      "Y"
+    ],
+    [
+      "#",
+      "#",
+      "S",
+      "#",
+      "#",
+      "M",
+      "#",
+      "A",
+      "#",
+      "B",
+      "#",
+      "#",
+      "L",
+      "#",
+      "#"
+    ],
+    [
+      "B",
+      "O",
+      "T",
+      "H",
+      "#",
+      "A",
+      "I",
+      "R",
+      "B",
+      "E",
+      "T",
+      "B",
+      "E",
+      "L",
+      "L"
+    ],
+    [
+      "E",
+      "#",
+      "E",
+      "#",
+      "#",
+      "L",
+      "#",
+      "T",
+      "#",
+      "I",
+      "#",
+      "U",
+      "#",
+      "#",
+      "E"
+    ],
+    [
+      "A",
+      "N",
+      "N",
+      "A",
+      "S",
+      "#",
+      "F",
+      "A",
+      "N",
+      "T",
+      "A",
+      "S",
+      "T",
+      "I",
+      "C"
+    ],
+    [
+      "S",
+      "#",
+      "T",
+      "#",
+      "W",
+      "#",
+      "U",
+      "#",
+      "A",
+      "#",
+      "L",
+      "#",
+      "W",
+      "#",
+      "T"
+    ],
+    [
+      "T",
+      "R",
+      "I",
+      "B",
+      "I",
+      "T",
+      "S",
+      "#",
+      "D",
+      "O",
+      "A",
+      "N",
+      "E",
+      "M",
+      "U"
+    ],
+    [
+      "E",
+      "#",
+      "O",
+      "#",
+      "S",
+      "#",
+      "S",
+      "K",
+      "I",
+      "#",
+      "R",
+      "#",
+      "E",
+      "#",
+      "R"
+    ],
+    [
+      "D",
+      "Y",
+      "N",
+      "A",
+      "S",
+      "T",
+      "Y",
+      "#",
+      "R",
+      "O",
+      "M",
+      "A",
+      "N",
+      "C",
+      "E"
+    ]
+  ],
+  "clues": {
+    "across": [
+      {
+        "number": 1,
+        "clue": "elepant",
+        "answer": "ELEPANT",
+        "row": 0,
+        "col": 0,
+        "length": 7
+      },
+      {
+        "number": 5,
+        "clue": "account",
+        "answer": "ACCOUNT",
+        "row": 0,
+        "col": 8,
+        "length": 7
+      },
+      {
+        "number": 9,
+        "clue": "oat",
+        "answer": "OAT",
+        "row": 1,
+        "col": 6,
+        "length": 3
+      },
+      {
+        "number": 10,
+        "clue": "Ali baba",
+        "answer": "ALIBABA",
+        "row": 2,
+        "col": 0,
+        "length": 7
+      },
+      {
+        "number": 11,
+        "clue": "gorilla",
+        "answer": "GORILLA",
+        "row": 2,
+        "col": 8,
+        "length": 7
+      },
+      {
+        "number": 12,
+        "clue": "presented",
+        "answer": "PRESENTED",
+        "row": 4,
+        "col": 0,
+        "length": 9
+      },
+      {
+        "number": 16,
+        "clue": "revie",
+        "answer": "REVIE",
+        "row": 4,
+        "col": 10,
+        "length": 5
+      },
+      {
+        "number": 18,
+        "clue": "esoterical",
+        "answer": "ESOTERICAL",
+        "row": 6,
+        "col": 0,
+        "length": 10
+      },
+      {
+        "number": 20,
+        "clue": "ably",
+        "answer": "ABLY",
+        "row": 6,
+        "col": 11,
+        "length": 4
+      },
+      {
+        "number": 21,
+        "clue": "both",
+        "answer": "BOTH",
+        "row": 8,
+        "col": 0,
+        "length": 4
+      },
+      {
+        "number": 22,
+        "clue": "air bet bell",
+        "answer": "AIRBETBELL",
+        "row": 8,
+        "col": 5,
+        "length": 10
+      },
+      {
+        "number": 25,
+        "clue": "annas",
+        "answer": "ANNAS",
+        "row": 10,
+        "col": 0,
+        "length": 5
+      },
+      {
+        "number": 27,
+        "clue": "fantastic",
+        "answer": "FANTASTIC",
+        "row": 10,
+        "col": 6,
+        "length": 9
+      },
+      {
+        "number": 31,
+        "clue": "tribits",
+        "answer": "TRIBITS",
+        "row": 12,
+        "col": 0,
+        "length": 7
+      },
+      {
+        "number": 32,
+        "clue": "do an emu",
+        "answer": "DOANEMU",
+        "row": 12,
+        "col": 8,
+        "length": 7
+      },
+      {
+        "number": 33,
+        "clue": "ski",
+        "answer": "SKI",
+        "row": 13,
+        "col": 6,
+        "length": 3
+      },
+      {
+        "number": 34,
+        "clue": "dynasty",
+        "answer": "DYNASTY",
+        "row": 14,
+        "col": 0,
+        "length": 7
+      },
+      {
+        "number": 35,
+        "clue": "romance",
+        "answer": "ROMANCE",
+        "row": 14,
+        "col": 8,
+        "length": 7
+      }
+    ],
+    "down": [
+      {
+        "number": 1,
+        "clue": "example",
+        "answer": "EXAMPLE",
+        "row": 0,
+        "col": 0,
+        "length": 7
+      },
+      {
+        "number": 2,
+        "clue": "elite",
+        "answer": "ELITE",
+        "row": 0,
+        "col": 2,
+        "length": 5
+      },
+      {
+        "number": 3,
+        "clue": "awake",
+        "answer": "AWAKE",
+        "row": 0,
+        "col": 4,
+        "length": 5
+      },
+      {
+        "number": 4,
+        "clue": "toast",
+        "answer": "TOAST",
+        "row": 0,
+        "col": 6,
+        "length": 5
+      },
+      {
+        "number": 5,
+        "clue": "at god",
+        "answer": "ATGOD",
+        "row": 0,
+        "col": 8,
+        "length": 5
+      },
+      {
+        "number": 6,
+        "clue": "carer",
+        "answer": "CARER",
+        "row": 0,
+        "col": 10,
+        "length": 5
+      },
+      {
+        "number": 7,
+        "clue": "unlovable",
+        "answer": "UNLOVABLE",
+        "row": 0,
+        "col": 12,
+        "length": 9
+      },
+      {
+        "number": 8,
+        "clue": "tragedy",
+        "answer": "TRAGEDY",
+        "row": 0,
+        "col": 14,
+        "length": 7
+      },
+      {
+        "number": 13,
+        "clue": "sit",
+        "answer": "SIT",
+        "row": 4,
+        "col": 3,
+        "length": 3
+      },
+      {
+        "number": 14,
+        "clue": "normal",
+        "answer": "NORMAL",
+        "row": 4,
+        "col": 5,
+        "length": 6
+      },
+      {
+        "number": 15,
+        "clue": "encarta",
+        "answer": "ENCARTA",
+        "row": 4,
+        "col": 7,
+        "length": 7
+      },
+      {
+        "number": 17,
+        "clue": "albeit",
+        "answer": "ALBEIT",
+        "row": 5,
+        "col": 9,
+        "length": 6
+      },
+      {
+        "number": 19,
+        "clue": "ostention",
+        "answer": "OSTENTION",
+        "row": 6,
+        "col": 2,
+        "length": 9
+      },
+      {
+        "number": 21,
+        "clue": "beasted",
+        "answer": "BEASTED",
+        "row": 8,
+        "col": 0,
+        "length": 7
+      },
+      {
+        "number": 23,
+        "clue": "bus",
+        "answer": "BUS",
+        "row": 8,
+        "col": 11,
+        "length": 3
+      },
+      {
+        "number": 24,
+        "clue": "lecture",
+        "answer": "LECTURE",
+        "row": 8,
+        "col": 14,
+        "length": 7
+      },
+      {
+        "number": 26,
+        "clue": "swiss",
+        "answer": "SWISS",
+        "row": 10,
+        "col": 4,
+        "length": 5
+      },
+      {
+        "number": 27,
+        "clue": "fussy",
+        "answer": "FUSSY",
+        "row": 10,
+        "col": 6,
+        "length": 5
+      },
+      {
+        "number": 28,
+        "clue": "nadir",
+        "answer": "NADIR",
+        "row": 10,
+        "col": 8,
+        "length": 5
+      },
+      {
+        "number": 29,
+        "clue": "alarm",
+        "answer": "ALARM",
+        "row": 10,
+        "col": 10,
+        "length": 5
+      },
+      {
+        "number": 30,
+        "clue": "tween",
+        "answer": "TWEEN",
+        "row": 10,
+        "col": 12,
+        "length": 5
+      }
+    ]
+  }
+}

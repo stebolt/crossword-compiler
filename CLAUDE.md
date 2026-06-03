@@ -1,8 +1,5 @@
 # Crossword Compiler — Claude Code Guide
 
-Full spec: `/Users/steve/Vault/01 Atlas/Projects/Crossword Compiler/Spec.md`
-
----
 
 ## Repo Layout
 
@@ -34,8 +31,9 @@ cd solver && npm install && npm run dev
 - Compiler stores work-in-progress in `localStorage`
 - Solver reads published crosswords from `solver/public/crosswords/` (MVP) — one JSON file per crossword plus a `crosswords.json` manifest
 
-## Current Phase
+## Current Status
 
-**Phase 3 — Compiler: Auto-fill** (Phases 1 and 2 complete)
+Phases 1–5 complete. See the backlog for what to work on next.
 
-See spec for full phase breakdown.
+- Full spec: `/Users/steve/Vault/01 Atlas/Projects/Crossword Compiler/Spec.md`
+- Backlog: `/Users/steve/Vault/01 Atlas/Projects/Crossword Compiler/Backlog.md`
