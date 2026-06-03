@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import type { Crossword, Clue, Direction } from "../../../shared/types";
 import { ClueList } from "./ClueList";
@@ -15,11 +15,34 @@ export function CrosswordSolver({ crossword }: Props) {
   const [userGrid, setUserGrid] = useState<string[][]>(() =>
     Array.from({ length: 15 }, () => Array(15).fill(""))
   );
+  const [revealedCells, setRevealedCells] = useState<Set<string>>(new Set);
   const [activeCell, setActiveCell] = useState<{ row: number; col: number } | null>(null);
   const [direction, setDirection] = useState<Direction>("across");
   const [checkMode, setCheckMode] = useState<"off" | "word" | "grid">("off");
 
   const gridRef = useRef<HTMLDivElement>(null);
+
+  // Load persisted progress after mount to avoid hydration mismatch
+  useEffect(() => {
+    try {
+      const savedGrid = localStorage.getItem(`xw-progress-${meta.id}`);
+      if (savedGrid) setUserGrid(JSON.parse(savedGrid));
+      const savedRevealed = localStorage.getItem(`xw-revealed-${meta.id}`);
+      if (savedRevealed) setRevealedCells(new Set(JSON.parse(savedRevealed)));
+    } catch {}
+  }, [meta.id]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(`xw-progress-${meta.id}`, JSON.stringify(userGrid));
+    } catch {}
+  }, [userGrid, meta.id]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(`xw-revealed-${meta.id}`, JSON.stringify([...revealedCells]));
+    } catch {}
+  }, [revealedCells, meta.id]);
 
   const cellNumbers = useMemo(() => {
     const map = new Map<string, number>();
@@ -62,6 +85,24 @@ export function CrosswordSolver({ crossword }: Props) {
     return true;
   }, [grid, userGrid]);
 
+  const filledAcrossClues = useMemo(() => {
+    const filled = new Set<number>();
+    for (const clue of clues.across) {
+      if (Array.from({ length: clue.length }, (_, i) => userGrid[clue.row][clue.col + i]).every(Boolean))
+        filled.add(clue.number);
+    }
+    return filled;
+  }, [clues, userGrid]);
+
+  const filledDownClues = useMemo(() => {
+    const filled = new Set<number>();
+    for (const clue of clues.down) {
+      if (Array.from({ length: clue.length }, (_, i) => userGrid[clue.row + i][clue.col]).every(Boolean))
+        filled.add(clue.number);
+    }
+    return filled;
+  }, [clues, userGrid]);
+
   const nextCell = useCallback(
     (row: number, col: number, dir: Direction) => {
       if (dir === "across") {
@@ -100,7 +141,6 @@ export function CrosswordSolver({ crossword }: Props) {
 
       setActiveCell({ row, col });
 
-      // Fall back to the other direction if no clue covers this cell in the current direction
       const list = direction === "across" ? clues.across : clues.down;
       const covered = list.some((c) =>
         direction === "across"
@@ -193,6 +233,57 @@ export function CrosswordSolver({ crossword }: Props) {
     [activeCell, direction, userGrid, clues, activeClue, nextCell, prevCell]
   );
 
+  const clearGrid = useCallback(() => {
+    setUserGrid(Array.from({ length: 15 }, () => Array(15).fill("")));
+    setRevealedCells(new Set());
+    setCheckMode("off");
+  }, []);
+
+  const revealCell = useCallback(() => {
+    if (!activeCell) return;
+    const { row, col } = activeCell;
+    if (grid[row][col] === "#") return;
+    const key = `${row}-${col}`;
+    setUserGrid((prev) => {
+      const next = prev.map((r) => [...r]);
+      next[row][col] = grid[row][col] as string;
+      return next;
+    });
+    setRevealedCells((prev) => new Set([...prev, key]));
+    setCheckMode("off");
+  }, [activeCell, grid]);
+
+  const revealWord = useCallback(() => {
+    if (!activeClue) return;
+    const newKeys: string[] = [];
+    setUserGrid((prev) => {
+      const next = prev.map((r) => [...r]);
+      for (let i = 0; i < activeClue.length; i++) {
+        const r = direction === "across" ? activeClue.row : activeClue.row + i;
+        const c = direction === "across" ? activeClue.col + i : activeClue.col;
+        next[r][c] = grid[r][c] as string;
+        newKeys.push(`${r}-${c}`);
+      }
+      return next;
+    });
+    setRevealedCells((prev) => new Set([...prev, ...newKeys]));
+    setCheckMode("off");
+  }, [activeClue, direction, grid]);
+
+  const revealAll = useCallback(() => {
+    const allKeys: string[] = [];
+    setUserGrid(
+      grid.map((row, r) =>
+        row.map((cell, c) => {
+          if (cell !== "#") allKeys.push(`${r}-${c}`);
+          return cell === "#" ? "" : (cell as string);
+        })
+      )
+    );
+    setRevealedCells(new Set(allKeys));
+    setCheckMode("off");
+  }, [grid]);
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <header className="border-b border-zinc-200 px-6 py-4 flex items-center justify-between shrink-0">
@@ -236,6 +327,34 @@ export function CrosswordSolver({ crossword }: Props) {
               Check Grid
             </button>
           </div>
+          <button
+            onClick={clearGrid}
+            className="px-3 py-1.5 rounded-md border border-zinc-300 text-sm text-zinc-600 hover:bg-zinc-50 transition-colors"
+          >
+            Clear Grid
+          </button>
+          <div className="flex items-center rounded-md border border-zinc-300 overflow-hidden text-sm">
+            <button
+              onClick={revealCell}
+              className="px-3 py-1.5 text-zinc-600 hover:bg-zinc-50 transition-colors"
+            >
+              Reveal Cell
+            </button>
+            <div className="w-px bg-zinc-300 self-stretch" />
+            <button
+              onClick={revealWord}
+              className="px-3 py-1.5 text-zinc-600 hover:bg-zinc-50 transition-colors"
+            >
+              Reveal Word
+            </button>
+            <div className="w-px bg-zinc-300 self-stretch" />
+            <button
+              onClick={revealAll}
+              className="px-3 py-1.5 text-zinc-600 hover:bg-zinc-50 transition-colors"
+            >
+              Reveal All
+            </button>
+          </div>
         </div>
       </header>
 
@@ -255,11 +374,13 @@ export function CrosswordSolver({ crossword }: Props) {
                   const key = `${r}-${c}`;
                   const isActive = activeCell?.row === r && activeCell?.col === c;
                   const isHighlighted = highlightedCells.has(key);
+                  const isRevealed = revealedCells.has(key);
                   const number = cellNumbers.get(key);
                   const letter = userGrid[r][c];
                   const isWrong =
                     checkMode !== "off" &&
                     letter !== "" &&
+                    !isRevealed &&
                     letter !== cell &&
                     (checkMode === "grid" || highlightedCells.has(key));
 
@@ -267,6 +388,8 @@ export function CrosswordSolver({ crossword }: Props) {
                   if (isBlack) bg = "bg-black";
                   else if (isActive) bg = "bg-blue-400";
                   else if (isWrong) bg = "bg-red-100";
+                  else if (isRevealed && isHighlighted) bg = "bg-blue-100";
+                  else if (isRevealed) bg = "bg-amber-50";
                   else if (isHighlighted) bg = "bg-blue-100";
 
                   return (
@@ -305,12 +428,14 @@ export function CrosswordSolver({ crossword }: Props) {
             direction="across"
             clues={clues.across}
             activeClue={direction === "across" ? activeClue : null}
+            filledClues={filledAcrossClues}
             onClueClick={(clue) => handleClueClick(clue, "across")}
           />
           <ClueList
             direction="down"
             clues={clues.down}
             activeClue={direction === "down" ? activeClue : null}
+            filledClues={filledDownClues}
             onClueClick={(clue) => handleClueClick(clue, "down")}
           />
         </div>
