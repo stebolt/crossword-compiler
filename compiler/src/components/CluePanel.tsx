@@ -21,15 +21,15 @@ const STATUS_DOT: Record<ClueStatus, string> = {
 };
 
 const STATUS_COLOR: Record<ClueStatus, string> = {
-  unwritten: 'text-gray-300 cursor-not-allowed',
+  unwritten: 'text-gray-300 dark:text-gray-600 cursor-not-allowed',
   drafted:   'text-amber-400 hover:text-amber-500 cursor-pointer',
   confirmed: 'text-green-500 hover:text-green-600 cursor-pointer',
 };
 
 const ANSWER_COLOR: Record<ClueStatus, string> = {
-  unwritten: 'text-gray-400',
+  unwritten: 'text-gray-400 dark:text-gray-500',
   drafted:   'text-amber-500',
-  confirmed: 'text-green-600',
+  confirmed: 'text-green-600 dark:text-green-500',
 };
 
 export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCursor, setDirection }: Props) {
@@ -86,9 +86,16 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
   const acrossSlots = slots.filter(s => s.dir === 'across');
   const downSlots = slots.filter(s => s.dir === 'down');
 
+  // Summary counts for sticky bar
+  const confirmedCount = slots.filter(s => {
+    const e = getClue(s.num, s.dir);
+    return !s.answer.includes('_') && e.status === 'confirmed';
+  }).length;
+  const totalFillable = slots.filter(s => !s.answer.includes('_')).length;
+
   if (slots.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center text-sm text-gray-400 border border-gray-200 rounded-md bg-white">
+      <div className="flex-1 flex items-center justify-center text-sm text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
         No slots yet — add white cells to the grid.
       </div>
     );
@@ -112,23 +119,23 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
         <div
           key={key}
           ref={isActive ? activeRef : undefined}
-          className={`border-b border-gray-100 px-3 py-1.5 bg-gray-50 ${isActive ? 'ring-1 ring-inset ring-blue-200' : ''}`}
+          className={`border-b border-gray-100 dark:border-gray-700 px-3 py-1.5 bg-gray-50 dark:bg-gray-700/40 ${isActive ? 'ring-1 ring-inset ring-blue-200 dark:ring-blue-700' : ''}`}
         >
           <div className="flex items-center gap-2">
             <button
               onClick={() => { setCursor({ row: slot.row, col: slot.col }); setDirection(slot.dir); }}
-              className={`flex-shrink-0 flex items-baseline gap-px font-semibold text-sm w-7 ${isActive ? 'text-blue-500' : 'text-gray-400 hover:text-gray-700'}`}
+              className={`flex-shrink-0 flex items-baseline gap-px font-semibold text-sm w-7 ${isActive ? 'text-blue-500' : 'text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
             >
               {slot.num}<span className="text-xs font-normal">{slot.dir === 'across' ? 'A' : 'D'}</span>
             </button>
-            <span className="text-xs text-gray-400 italic select-none">See {originLabel}</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500 italic select-none">See {originLabel}</span>
             <div className={`font-mono text-xs tracking-widest select-none ml-2 ${ANSWER_COLOR[effectiveStatus]}`}>
               {slot.answer}
             </div>
             <button
               onClick={() => removeFromChain(chainOrigin, slot)}
               title="Unlink from chain"
-              className="ml-auto text-xs text-gray-300 hover:text-red-400 leading-none"
+              className="ml-auto text-xs text-gray-300 dark:text-gray-600 hover:text-red-400 leading-none"
             >
               ✕
             </button>
@@ -154,13 +161,13 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
       <div
         key={key}
         ref={isActive ? activeRef : undefined}
-        className={`border-b border-gray-100 px-3 py-1 ${isActive ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+        className={`border-b border-gray-100 dark:border-gray-700 px-3 py-1 ${isActive ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/30'}`}
       >
         <div className="flex items-start gap-2">
           {/* Number + direction — clicking jumps grid cursor */}
           <button
             onClick={() => { setCursor({ row: slot.row, col: slot.col }); setDirection(slot.dir); }}
-            className={`flex-shrink-0 flex items-baseline gap-px mt-0.5 font-semibold text-sm w-7 ${isActive ? 'text-blue-600' : 'text-gray-400 hover:text-gray-700'}`}
+            className={`flex-shrink-0 flex items-baseline gap-px mt-0.5 font-semibold text-sm w-7 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
           >
             {slot.num}<span className="text-xs font-normal">{slot.dir === 'across' ? 'A' : 'D'}</span>
           </button>
@@ -171,7 +178,7 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
               <div className={`font-mono text-xs tracking-widest select-none ${ANSWER_COLOR[effectiveStatus]}`}>
                 {myChain.length > 0
                   ? [slot.answer, ...myChain.map(cs => slots.find(s => s.num === cs.number && s.dir === cs.direction)?.answer ?? '')].map((a, i) => (
-                      <span key={i}>{i > 0 && <span className="text-gray-300 mx-px">·</span>}{a}</span>
+                      <span key={i}>{i > 0 && <span className="text-gray-300 dark:text-gray-600 mx-px">·</span>}{a}</span>
                     ))
                   : slot.answer}
               </div>
@@ -185,10 +192,10 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
               value={entry.clue}
               placeholder="Write clue…"
               onChange={v => updateClue(slot.num, slot.dir, { clue: v })}
-              className={`w-full text-sm bg-transparent outline-none border-b placeholder-gray-300 leading-snug
+              className={`w-full text-sm bg-transparent outline-none border-b placeholder-gray-300 dark:placeholder-gray-600 leading-snug
                 ${isActive
-                  ? 'border-blue-300 text-gray-900'
-                  : 'border-transparent text-gray-700 hover:border-gray-200 focus:border-blue-300'
+                  ? 'border-blue-300 dark:border-blue-600 text-gray-900 dark:text-gray-100'
+                  : 'border-transparent text-gray-700 dark:text-gray-300 hover:border-gray-200 dark:hover:border-gray-600 focus:border-blue-300 dark:focus:border-blue-600'
                 }`}
             />
           </div>
@@ -209,7 +216,7 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
           <div className="mt-0.5 pl-7">
             <button
               onClick={() => toggleNotes(key)}
-              className="text-xs text-gray-300 hover:text-gray-500"
+              className="text-xs text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400"
             >
               {notesOpen ? '▾' : '▸'} notes
               {entry.notes && !notesOpen && <span className="ml-1 text-amber-400">•</span>}
@@ -219,29 +226,29 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
                 value={entry.notes}
                 placeholder="Scratch pad…"
                 onChange={v => updateClue(slot.num, slot.dir, { notes: v })}
-                className="mt-1 w-full text-xs bg-transparent outline-none border-b border-gray-200 text-gray-500 placeholder-gray-300 focus:border-blue-300 leading-snug"
+                className="mt-1 w-full text-xs bg-transparent outline-none border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 placeholder-gray-300 dark:placeholder-gray-600 focus:border-blue-300 dark:focus:border-blue-600 leading-snug"
               />
             )}
           </div>
         )}
 
-        {/* Chain section — shown when this slot has continuations or is active (to offer linking) */}
+        {/* Chain section */}
         {(myChain.length > 0 || isActive) && (
           <div className="mt-1 pl-7 space-y-1">
             {myChain.length > 0 && (
               <div className="flex flex-wrap items-center gap-1">
-                <span className="text-xs text-gray-400 select-none">Continues:</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500 select-none">Continues:</span>
                 {myChain.map((cs, i) => {
                   const csLabel = `${cs.number}${cs.direction === 'across' ? 'A' : 'D'}`;
                   const csSlot = slots.find(s => s.num === cs.number && s.dir === cs.direction);
                   return (
-                    <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-indigo-50 text-indigo-600 rounded px-1.5 py-0.5 font-medium">
+                    <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded px-1.5 py-0.5 font-medium">
                       {csLabel}
-                      {csSlot && <span className="text-indigo-400 font-normal ml-0.5">({csSlot.length})</span>}
+                      {csSlot && <span className="text-indigo-400 dark:text-indigo-500 font-normal ml-0.5">({csSlot.length})</span>}
                       <button
                         onClick={() => removeChainSlot(slot, cs)}
                         title={`Remove ${csLabel} from chain`}
-                        className="ml-0.5 text-indigo-300 hover:text-red-400 font-bold leading-none"
+                        className="ml-0.5 text-indigo-300 dark:text-indigo-600 hover:text-red-400 font-bold leading-none"
                       >
                         ×
                       </button>
@@ -260,7 +267,7 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
                   const num = parseInt(parts[0], 10);
                   addToChain(slot, { number: num, direction: dir });
                 }}
-                className="text-xs text-gray-400 bg-transparent border-b border-gray-200 outline-none hover:border-gray-300 cursor-pointer"
+                className="text-xs text-gray-400 dark:text-gray-500 bg-transparent dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 outline-none hover:border-gray-300 dark:hover:border-gray-600 cursor-pointer"
               >
                 <option value="">+ link slot…</option>
                 {availableToChain.map(s => (
@@ -277,26 +284,104 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
   };
 
   return (
-    <div className="flex min-h-0 w-fit border border-gray-200 rounded-md bg-white overflow-hidden">
-      {/* Across column */}
-      <div className="w-[544px] flex-shrink-0 flex flex-col border-r border-gray-200 overflow-hidden">
-        <div className="bg-gray-50 border-b border-gray-200 px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-          Across
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          {acrossSlots.map(renderSlot)}
-        </div>
+    <div className="flex flex-col min-h-0 w-full border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 overflow-hidden">
+      {/* Sticky summary bar */}
+      <div className="shrink-0 border-b border-gray-200 dark:border-gray-700 px-4 py-1.5 bg-gray-50 dark:bg-gray-700/50 flex items-center gap-4">
+        <span className="text-xs text-gray-500 dark:text-gray-400">
+          <span className="font-semibold text-gray-700 dark:text-gray-200">{totalFillable}</span>
+          <span> / {slots.length} filled · </span>
+          <span className="font-semibold text-gray-700 dark:text-gray-200">{confirmedCount}</span>
+          <span> confirmed</span>
+        </span>
+        <QuickJump
+          slots={slots}
+          getClue={getClue}
+          activeSlot={activeSlot}
+          setCursor={setCursor}
+          setDirection={setDirection}
+        />
       </div>
 
-      {/* Down column */}
-      <div className="w-[544px] flex-shrink-0 flex flex-col overflow-hidden">
-        <div className="bg-gray-50 border-b border-gray-200 px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-          Down
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        {/* Across column */}
+        <div className="flex-1 min-w-0 flex flex-col border-r border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700 px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            Across
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {acrossSlots.map(renderSlot)}
+          </div>
         </div>
-        <div className="flex-1 overflow-y-auto">
-          {downSlots.map(renderSlot)}
+
+        {/* Down column */}
+        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700 px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            Down
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {downSlots.map(renderSlot)}
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function QuickJump({ slots, getClue, activeSlot, setCursor, setDirection }: {
+  slots: Slot[];
+  getClue: (num: number, dir: Direction) => ClueEntry;
+  activeSlot: Slot | null;
+  setCursor: (pos: { row: number; col: number }) => void;
+  setDirection: (dir: Direction) => void;
+}) {
+  const unconfirmed = slots.filter(s => {
+    if (s.answer.includes('_')) return false;
+    const e = getClue(s.num, s.dir);
+    return e.status !== 'confirmed';
+  });
+
+  const jumpToNext = (forward: boolean) => {
+    if (unconfirmed.length === 0) return;
+    if (!activeSlot) {
+      const target = unconfirmed[0];
+      setCursor({ row: target.row, col: target.col });
+      setDirection(target.dir);
+      return;
+    }
+    const idx = unconfirmed.findIndex(s => s.num === activeSlot.num && s.dir === activeSlot.dir);
+    const next = forward
+      ? unconfirmed[(idx + 1) % unconfirmed.length]
+      : unconfirmed[(idx - 1 + unconfirmed.length) % unconfirmed.length];
+    setCursor({ row: next.row, col: next.col });
+    setDirection(next.dir);
+  };
+
+  const unfilledCount = slots.filter(s => s.answer.includes('_')).length;
+
+  if (unconfirmed.length === 0) {
+    if (unfilledCount === 0 && slots.length > 0) {
+      return <span className="text-xs text-green-600 dark:text-green-400 font-medium">All confirmed ✓</span>;
+    }
+    return null;
+  }
+
+  return (
+    <div className="flex items-center gap-1 ml-auto">
+      <span className="text-xs text-gray-400 dark:text-gray-500">{unconfirmed.length} to confirm</span>
+      <button
+        onClick={() => jumpToNext(false)}
+        title="Previous unconfirmed"
+        className="px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+      >
+        ↑
+      </button>
+      <button
+        onClick={() => jumpToNext(true)}
+        title="Next unconfirmed"
+        className="px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+      >
+        ↓
+      </button>
     </div>
   );
 }
@@ -328,7 +413,7 @@ function EnumerationInput({ value, slotLength, onChange }: {
 
   return (
     <div className="flex items-center gap-1 mt-1 min-h-[1.25rem]">
-      <span className="text-xs text-gray-400 select-none">(</span>
+      <span className="text-xs text-gray-400 dark:text-gray-500 select-none">(</span>
       <input
         value={raw}
         onChange={e => { setRaw(e.target.value); setError(null); }}
@@ -338,9 +423,9 @@ function EnumerationInput({ value, slotLength, onChange }: {
         aria-label="Word lengths e.g. 3,5,4"
         className={`text-xs w-[5ch] bg-transparent outline-none border-b leading-none
           ${error ? 'border-red-400 text-red-500 placeholder-red-300'
-                  : 'border-transparent hover:border-gray-200 focus:border-blue-300 text-gray-500 placeholder-gray-300'}`}
+                  : 'border-transparent hover:border-gray-200 dark:hover:border-gray-600 focus:border-blue-300 dark:focus:border-blue-500 text-gray-500 dark:text-gray-400 placeholder-gray-300 dark:placeholder-gray-600'}`}
       />
-      <span className="text-xs text-gray-400 select-none">)</span>
+      <span className="text-xs text-gray-400 dark:text-gray-500 select-none">)</span>
       {error && <span className="text-xs text-red-400">{error}</span>}
     </div>
   );

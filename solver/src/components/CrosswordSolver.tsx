@@ -19,8 +19,14 @@ export function CrosswordSolver({ crossword }: Props) {
   const [activeCell, setActiveCell] = useState<{ row: number; col: number } | null>(null);
   const [direction, setDirection] = useState<Direction>("across");
   const [checkMode, setCheckMode] = useState<"off" | "word" | "grid">("off");
+  const [clueTab, setClueTab] = useState<Direction>("across");
 
   const gridRef = useRef<HTMLDivElement>(null);
+
+  // Sync mobile clue tab with active direction
+  useEffect(() => {
+    setClueTab(direction);
+  }, [direction]);
 
   // Load persisted progress after mount to avoid hydration mismatch
   useEffect(() => {
@@ -286,85 +292,94 @@ export function CrosswordSolver({ crossword }: Props) {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <header className="border-b border-zinc-200 px-6 py-4 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="text-sm text-zinc-400 hover:text-zinc-600 transition-colors">
-            ← All puzzles
-          </Link>
-          <div>
-            <h1 className="text-lg font-semibold text-zinc-900 leading-tight">{meta.title}</h1>
-            <p className="text-xs text-zinc-400">
-              By {meta.author} · {meta.publishedAt}
-            </p>
+      <header className="border-b border-zinc-200 px-4 sm:px-6 py-3 shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+          {/* Title row */}
+          <div className="flex items-center gap-3 min-w-0">
+            <Link href="/" className="text-sm text-zinc-400 hover:text-zinc-600 transition-colors shrink-0">
+              ← All puzzles
+            </Link>
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg font-semibold text-zinc-900 leading-tight truncate">{meta.title}</h1>
+              <p className="text-xs text-zinc-400">
+                By {meta.author} · {meta.publishedAt}
+              </p>
+            </div>
+            {isComplete && (
+              <span className="sm:hidden text-sm font-medium text-green-700 bg-green-50 border border-green-200 px-3 py-1 rounded-full shrink-0">
+                Complete!
+              </span>
+            )}
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          {isComplete && (
-            <span className="text-sm font-medium text-green-700 bg-green-50 border border-green-200 px-3 py-1 rounded-full">
-              Complete!
-            </span>
-          )}
-          <div className="flex items-center rounded-md border border-zinc-300 overflow-hidden text-sm">
+          {/* Controls row */}
+          <div className="flex flex-wrap items-center gap-2">
+            {isComplete && (
+              <span className="hidden sm:inline text-sm font-medium text-green-700 bg-green-50 border border-green-200 px-3 py-1 rounded-full">
+                Complete!
+              </span>
+            )}
+            <div className="flex items-center rounded-md border border-zinc-300 overflow-hidden text-sm">
+              <button
+                onClick={() => setCheckMode("word")}
+                className={`px-3 py-1.5 transition-colors ${
+                  checkMode === "word"
+                    ? "bg-zinc-900 text-white"
+                    : "text-zinc-600 hover:bg-zinc-50"
+                }`}
+              >
+                Check Word
+              </button>
+              <div className="w-px bg-zinc-300 self-stretch" />
+              <button
+                onClick={() => setCheckMode("grid")}
+                className={`px-3 py-1.5 transition-colors ${
+                  checkMode === "grid"
+                    ? "bg-zinc-900 text-white"
+                    : "text-zinc-600 hover:bg-zinc-50"
+                }`}
+              >
+                Check Grid
+              </button>
+            </div>
             <button
-              onClick={() => setCheckMode("word")}
-              className={`px-3 py-1.5 transition-colors ${
-                checkMode === "word"
-                  ? "bg-zinc-900 text-white"
-                  : "text-zinc-600 hover:bg-zinc-50"
-              }`}
+              onClick={clearGrid}
+              className="px-3 py-1.5 rounded-md border border-zinc-300 text-sm text-zinc-600 hover:bg-zinc-50 transition-colors"
             >
-              Check Word
+              Clear Grid
             </button>
-            <div className="w-px bg-zinc-300 self-stretch" />
-            <button
-              onClick={() => setCheckMode("grid")}
-              className={`px-3 py-1.5 transition-colors ${
-                checkMode === "grid"
-                  ? "bg-zinc-900 text-white"
-                  : "text-zinc-600 hover:bg-zinc-50"
-              }`}
-            >
-              Check Grid
-            </button>
-          </div>
-          <button
-            onClick={clearGrid}
-            className="px-3 py-1.5 rounded-md border border-zinc-300 text-sm text-zinc-600 hover:bg-zinc-50 transition-colors"
-          >
-            Clear Grid
-          </button>
-          <div className="flex items-center rounded-md border border-zinc-300 overflow-hidden text-sm">
-            <button
-              onClick={revealCell}
-              className="px-3 py-1.5 text-zinc-600 hover:bg-zinc-50 transition-colors"
-            >
-              Reveal Cell
-            </button>
-            <div className="w-px bg-zinc-300 self-stretch" />
-            <button
-              onClick={revealWord}
-              className="px-3 py-1.5 text-zinc-600 hover:bg-zinc-50 transition-colors"
-            >
-              Reveal Word
-            </button>
-            <div className="w-px bg-zinc-300 self-stretch" />
-            <button
-              onClick={revealAll}
-              className="px-3 py-1.5 text-zinc-600 hover:bg-zinc-50 transition-colors"
-            >
-              Reveal All
-            </button>
+            <div className="flex items-center rounded-md border border-zinc-300 overflow-hidden text-sm">
+              <button
+                onClick={revealCell}
+                className="px-3 py-1.5 text-zinc-600 hover:bg-zinc-50 transition-colors"
+              >
+                Reveal Cell
+              </button>
+              <div className="w-px bg-zinc-300 self-stretch" />
+              <button
+                onClick={revealWord}
+                className="px-3 py-1.5 text-zinc-600 hover:bg-zinc-50 transition-colors"
+              >
+                Reveal Word
+              </button>
+              <div className="w-px bg-zinc-300 self-stretch" />
+              <button
+                onClick={revealAll}
+                className="px-3 py-1.5 text-zinc-600 hover:bg-zinc-50 transition-colors"
+              >
+                Reveal All
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="flex gap-8 p-6 flex-1 max-w-5xl mx-auto w-full">
+      <main className="flex flex-col lg:flex-row gap-6 lg:gap-8 p-4 lg:p-6 lg:flex-1 max-w-5xl mx-auto w-full">
         {/* Grid */}
         <div
           ref={gridRef}
           tabIndex={0}
           onKeyDown={handleKeyDown}
-          className="outline-none shrink-0 self-start"
+          className="outline-none shrink-0 self-start mx-auto lg:mx-0"
         >
           <div className="border-t border-l border-zinc-800 inline-block">
             {grid.map((row, r) => (
@@ -396,18 +411,18 @@ export function CrosswordSolver({ crossword }: Props) {
                     <div
                       key={c}
                       onClick={() => handleCellClick(r, c)}
-                      className={`w-9 h-9 relative border-r border-b border-zinc-800 flex items-center justify-center select-none ${
+                      className={`w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9 relative border-r border-b border-zinc-800 flex items-center justify-center select-none ${
                         isBlack ? "cursor-default" : "cursor-pointer"
                       } ${bg}`}
                     >
                       {number !== undefined && !isBlack && (
-                        <span className="absolute top-0 left-0.5 text-[8px] leading-none font-medium text-zinc-500">
+                        <span className="absolute top-0 left-0.5 text-[6px] sm:text-[7px] lg:text-[8px] leading-none font-medium text-zinc-500">
                           {number}
                         </span>
                       )}
                       {!isBlack && letter && (
                         <span
-                          className={`text-[15px] font-bold leading-none ${
+                          className={`text-[9px] sm:text-[12px] lg:text-[15px] font-bold leading-none ${
                             isActive ? "text-white" : "text-zinc-900"
                           }`}
                         >
@@ -422,8 +437,36 @@ export function CrosswordSolver({ crossword }: Props) {
           </div>
         </div>
 
-        {/* Clue lists */}
-        <div className="flex gap-6 flex-1 min-h-0 overflow-hidden" style={{ alignSelf: "stretch" }}>
+        {/* Mobile: tabbed clue lists */}
+        <div className="lg:hidden flex flex-col">
+          <div className="flex border-b border-zinc-200 mb-3">
+            {(["across", "down"] as Direction[]).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setClueTab(tab)}
+                className={`flex-1 py-2 text-sm font-medium capitalize transition-colors ${
+                  clueTab === tab
+                    ? "text-zinc-900 border-b-2 border-zinc-900 -mb-px"
+                    : "text-zinc-400 hover:text-zinc-600"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+          <div className="h-80 flex flex-col">
+            <ClueList
+              direction={clueTab}
+              clues={clueTab === "across" ? clues.across : clues.down}
+              activeClue={clueTab === direction ? activeClue : null}
+              filledClues={clueTab === "across" ? filledAcrossClues : filledDownClues}
+              onClueClick={(clue) => handleClueClick(clue, clueTab)}
+            />
+          </div>
+        </div>
+
+        {/* Desktop: side-by-side clue lists */}
+        <div className="hidden lg:flex gap-6 flex-1 min-h-0 overflow-hidden" style={{ alignSelf: "stretch" }}>
           <ClueList
             direction="across"
             clues={clues.across}
