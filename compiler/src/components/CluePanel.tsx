@@ -1,5 +1,5 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
-import type { Direction } from '../../../shared/types';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import type { Direction, ClueRef } from '../../../shared/types';
 import type { Slot } from '../lib/cluePanelLogic';
 import { findActiveSlot } from '../lib/cluePanelLogic';
 import type { ClueEntry, ClueStatus } from '../hooks/useClues';
@@ -41,6 +41,36 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
     activeRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [activeSlot?.num, activeSlot?.dir]);
 
+  // Reverse lookup: "num-dir" → origin ClueRef (for continuation slot detection)
+  const continuationMap = useMemo(() => {
+    const map = new Map<string, ClueRef>();
+    for (const slot of slots) {
+      for (const cs of getClue(slot.num, slot.dir).chain ?? []) {
+        map.set(`${cs.number}-${cs.direction}`, { number: slot.num, direction: slot.dir });
+      }
+    }
+    return map;
+  }, [slots, getClue]);
+
+  const addToChain = useCallback((originSlot: Slot, cs: ClueRef) => {
+    const entry = getClue(originSlot.num, originSlot.dir);
+    updateClue(originSlot.num, originSlot.dir, { chain: [...(entry.chain ?? []), cs] });
+  }, [getClue, updateClue]);
+
+  const removeChainSlot = useCallback((originSlot: Slot, cs: ClueRef) => {
+    const entry = getClue(originSlot.num, originSlot.dir);
+    updateClue(originSlot.num, originSlot.dir, {
+      chain: (entry.chain ?? []).filter(c => !(c.number === cs.number && c.direction === cs.direction)),
+    });
+  }, [getClue, updateClue]);
+
+  const removeFromChain = useCallback((origin: ClueRef, continuationSlot: Slot) => {
+    const entry = getClue(origin.number, origin.direction);
+    updateClue(origin.number, origin.direction, {
+      chain: (entry.chain ?? []).filter(c => !(c.number === continuationSlot.num && c.direction === continuationSlot.dir)),
+    });
+  }, [getClue, updateClue]);
+
   const toggleNotes = (key: string) =>
     setExpandedNotes(prev => {
       const next = new Set(prev);
@@ -74,6 +104,52 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
       ? 'unwritten'
       : entry.status === 'confirmed' ? 'confirmed' : 'drafted';
 
+    // Is this slot a continuation of another slot's chain?
+    const chainOrigin = continuationMap.get(key);
+    if (chainOrigin) {
+      const originLabel = `${chainOrigin.number}${chainOrigin.direction === 'across' ? 'A' : 'D'}`;
+      return (
+        <div
+          key={key}
+          ref={isActive ? activeRef : undefined}
+          className={`border-b border-gray-100 px-3 py-1.5 bg-gray-50 ${isActive ? 'ring-1 ring-inset ring-blue-200' : ''}`}
+        >
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { setCursor({ row: slot.row, col: slot.col }); setDirection(slot.dir); }}
+              className={`flex-shrink-0 flex items-baseline gap-px font-semibold text-sm w-7 ${isActive ? 'text-blue-500' : 'text-gray-400 hover:text-gray-700'}`}
+            >
+              {slot.num}<span className="text-xs font-normal">{slot.dir === 'across' ? 'A' : 'D'}</span>
+            </button>
+            <span className="text-xs text-gray-400 italic select-none">See {originLabel}</span>
+            <div className={`font-mono text-xs tracking-widest select-none ml-2 ${ANSWER_COLOR[effectiveStatus]}`}>
+              {slot.answer}
+            </div>
+            <button
+              onClick={() => removeFromChain(chainOrigin, slot)}
+              title="Unlink from chain"
+              className="ml-auto text-xs text-gray-300 hover:text-red-400 leading-none"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // Chain info for origin slots
+    const myChain = entry.chain ?? [];
+    const combinedLength = slot.length + myChain.reduce((sum, cs) => {
+      return sum + (slots.find(s => s.num === cs.number && s.dir === cs.direction)?.length ?? 0);
+    }, 0);
+
+    // Slots available to append to this chain
+    const inChainKeys = new Set([key, ...myChain.map(cs => `${cs.number}-${cs.direction}`)]);
+    const availableToChain = slots.filter(s => {
+      const k = `${s.num}-${s.dir}`;
+      return !inChainKeys.has(k) && !continuationMap.has(k);
+    });
+
     return (
       <div
         key={key}
@@ -97,7 +173,7 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
               </div>
               <EnumerationInput
                 value={entry.enumeration}
-                slotLength={slot.length}
+                slotLength={combinedLength}
                 onChange={v => updateClue(slot.num, slot.dir, { enumeration: v })}
               />
             </div>
@@ -141,6 +217,54 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
                 onChange={v => updateClue(slot.num, slot.dir, { notes: v })}
                 className="mt-1 w-full text-xs bg-transparent outline-none border-b border-gray-200 text-gray-500 placeholder-gray-300 focus:border-blue-300 leading-snug"
               />
+            )}
+          </div>
+        )}
+
+        {/* Chain section — shown when this slot has continuations or is active (to offer linking) */}
+        {(myChain.length > 0 || isActive) && (
+          <div className="mt-1 pl-7 space-y-1">
+            {myChain.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1">
+                <span className="text-xs text-gray-400 select-none">Continues:</span>
+                {myChain.map((cs, i) => {
+                  const csLabel = `${cs.number}${cs.direction === 'across' ? 'A' : 'D'}`;
+                  const csSlot = slots.find(s => s.num === cs.number && s.dir === cs.direction);
+                  return (
+                    <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-indigo-50 text-indigo-600 rounded px-1.5 py-0.5 font-medium">
+                      {csLabel}
+                      {csSlot && <span className="text-indigo-400 font-normal ml-0.5">({csSlot.length})</span>}
+                      <button
+                        onClick={() => removeChainSlot(slot, cs)}
+                        title={`Remove ${csLabel} from chain`}
+                        className="ml-0.5 text-indigo-300 hover:text-red-400 font-bold leading-none"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+            {isActive && availableToChain.length > 0 && (
+              <select
+                value=""
+                onChange={e => {
+                  if (!e.target.value) return;
+                  const parts = e.target.value.split('-');
+                  const dir = parts.pop() as Direction;
+                  const num = parseInt(parts[0], 10);
+                  addToChain(slot, { number: num, direction: dir });
+                }}
+                className="text-xs text-gray-400 bg-transparent border-b border-gray-200 outline-none hover:border-gray-300 cursor-pointer"
+              >
+                <option value="">+ link slot…</option>
+                {availableToChain.map(s => (
+                  <option key={`${s.num}-${s.dir}`} value={`${s.num}-${s.dir}`}>
+                    {s.num}{s.dir === 'across' ? 'A' : 'D'} — {s.answer} ({s.length})
+                  </option>
+                ))}
+              </select>
             )}
           </div>
         )}

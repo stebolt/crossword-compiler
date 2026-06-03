@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { Direction } from '../../../shared/types';
+import type { Direction, ClueRef } from '../../../shared/types';
 
 export type ClueStatus = 'unwritten' | 'drafted' | 'confirmed';
 
@@ -8,6 +8,7 @@ export interface ClueEntry {
   notes: string;
   status: ClueStatus;
   enumeration: number[];
+  chain?: ClueRef[]; // ordered continuation slots for a linked answer
 }
 
 type ClueMap = Record<string, ClueEntry>;
