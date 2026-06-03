@@ -32,6 +32,7 @@ export function ClueList({ direction, clues, activeClue, filledClues, onClueClic
         {clues.map((clue) => {
           const isActive = clue.number === activeClue?.number;
           const isFilled = filledClues.has(clue.number);
+          const isLinked = !!clue.linkedTo;
           return (
             <li
               key={clue.number}
@@ -40,17 +41,21 @@ export function ClueList({ direction, clues, activeClue, filledClues, onClueClic
               className={`flex gap-2 px-2 py-1.5 rounded cursor-pointer text-sm leading-snug transition-colors ${
                 isActive
                   ? "bg-blue-500 text-white"
+                  : isLinked
+                  ? "text-zinc-400 hover:bg-zinc-100"
                   : isFilled
                   ? "text-zinc-300 hover:bg-zinc-100"
                   : "text-zinc-600 hover:bg-zinc-100"
               }`}
             >
               <span className="font-semibold shrink-0 w-5 text-right">{clue.number}</span>
-              <span>
+              <span className={isLinked ? "italic" : ""}>
                 {clue.clue}{" "}
-                <span className={isActive ? "text-blue-200" : isFilled ? "text-zinc-200" : "text-zinc-400"}>
-                  {enumeration(clue)}
-                </span>
+                {!isLinked && (
+                  <span className={isActive ? "text-blue-200" : isFilled ? "text-zinc-200" : "text-zinc-400"}>
+                    {enumeration(clue)}
+                  </span>
+                )}
               </span>
             </li>
           );

@@ -16,6 +16,8 @@ export interface Clue {
   col: number;
   length: number;
   wordLengths?: number[]; // e.g. [3,4,3] for a three-word answer; omitted for single words
+  chainedSlots?: ClueRef[]; // on origin: ordered list of continuation slots
+  linkedTo?: ClueRef;       // on continuation: points back to origin
 }
 
 export interface CrosswordClues {

@@ -1,4 +1,4 @@
-import type { Crossword, Clue, CellValue, Direction } from '../../../shared/types';
+import type { Crossword, Clue, CellValue, Direction, ClueRef } from '../../../shared/types';
 import type { Slot } from './cluePanelLogic';
 import type { ClueEntry } from '../hooks/useClues';
 
@@ -6,6 +6,19 @@ interface Meta {
   id: string;
   title: string;
   author: string;
+}
+
+function buildContinuationMap(
+  slots: Slot[],
+  getClue: (num: number, dir: Direction) => ClueEntry,
+): Map<string, ClueRef> {
+  const map = new Map<string, ClueRef>();
+  for (const slot of slots) {
+    for (const cs of getClue(slot.num, slot.dir).chain ?? []) {
+      map.set(`${cs.number}-${cs.direction}`, { number: slot.num, direction: slot.dir });
+    }
+  }
+  return map;
 }
 
 export interface ValidationResult {
@@ -24,7 +37,11 @@ export function validateCrossword(
     errors.push(`${unfilledCount} slot(s) have unfilled cells`);
   }
 
-  const unconfirmedCount = slots.filter(s => getClue(s.num, s.dir).status !== 'confirmed').length;
+  const continuationMap = buildContinuationMap(slots, getClue);
+  const unconfirmedCount = slots.filter(s => {
+    if (continuationMap.has(`${s.num}-${s.dir}`)) return false;
+    return getClue(s.num, s.dir).status !== 'confirmed';
+  }).length;
   if (unconfirmedCount > 0) {
     errors.push(`${unconfirmedCount} clue(s) are not confirmed`);
   }
@@ -40,17 +57,38 @@ export function buildCrossword(
 ): Crossword {
   const across: Clue[] = [];
   const down: Clue[] = [];
+  const continuationMap = buildContinuationMap(slots, getClue);
 
   for (const slot of slots) {
     const entry = getClue(slot.num, slot.dir);
-    const clue: Clue = {
-      number: slot.num,
-      clue: entry.clue,
-      answer: slot.answer,
-      row: slot.row,
-      col: slot.col,
-      length: slot.length,
-    };
+    const origin = continuationMap.get(`${slot.num}-${slot.dir}`);
+
+    let clue: Clue;
+    if (origin) {
+      const originDirLabel = origin.direction === 'across' ? 'A' : 'D';
+      clue = {
+        number: slot.num,
+        clue: `See ${origin.number}${originDirLabel}`,
+        answer: slot.answer,
+        row: slot.row,
+        col: slot.col,
+        length: slot.length,
+        linkedTo: origin,
+      };
+    } else {
+      const myChain = entry.chain ?? [];
+      clue = {
+        number: slot.num,
+        clue: entry.clue,
+        answer: slot.answer,
+        row: slot.row,
+        col: slot.col,
+        length: slot.length,
+        ...(entry.enumeration.length > 0 && { wordLengths: entry.enumeration }),
+        ...(myChain.length > 0 && { chainedSlots: myChain }),
+      };
+    }
+
     if (slot.dir === 'across') across.push(clue);
     else down.push(clue);
   }
