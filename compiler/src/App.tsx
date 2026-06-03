@@ -1,8 +1,9 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { TEMPLATES } from './lib/gridLogic';
 import type { Template } from './lib/gridLogic';
 import { getSlots } from './lib/cluePanelLogic';
 import { validateCrossword, buildCrossword, downloadJson } from './lib/crosswordExport';
+import { upsertLibraryEntry, type LibraryEntry } from './lib/puzzleLibrary';
 import { useGrid } from './hooks/useGrid';
 import { useClues } from './hooks/useClues';
 import { useMeta } from './hooks/useMeta';
@@ -13,6 +14,7 @@ import { AnagramHelper } from './components/AnagramHelper';
 import { WordplayHelper } from './components/WordplayHelper';
 import { SuggestionsPanel } from './components/SuggestionsPanel';
 import { ExportModal } from './components/ExportModal';
+import { PuzzleLibraryModal } from './components/PuzzleLibraryModal';
 import type { CrosswordMeta } from '../../shared/types';
 
 type HelperTab = 'suggestions' | 'wordplay' | 'anagram';
@@ -30,8 +32,8 @@ export default function App() {
     applyTemplate, clearGrid,
   } = useGrid();
 
-  const { getClue, updateClue, resetClues } = useClues();
-  const { meta, setTitle } = useMeta();
+  const { clues, getClue, updateClue, resetClues, loadCluesState } = useClues();
+  const { meta, setTitle, resetMeta } = useMeta();
 
   const slots = useMemo(() => getSlots(grid, numbers), [grid, numbers]);
   const { activeSlot, suggestions } = useAutofill(slots, cursor, direction);
@@ -45,6 +47,70 @@ export default function App() {
     try { localStorage.setItem('cc-dark', next ? '1' : '0'); } catch {}
     return next;
   });
+
+  // Puzzle library
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<
+    { type: 'new' } | { type: 'load'; entry: LibraryEntry } | null
+  >(null);
+  const [savedToast, setSavedToast] = useState(false);
+
+  const buildLibraryEntry = useCallback((): LibraryEntry => ({
+    id: meta.id,
+    title: meta.title,
+    author: meta.author,
+    savedAt: new Date().toISOString(),
+    grid,
+    clues,
+  }), [meta, grid, clues]);
+
+  const showSavedToast = () => {
+    setSavedToast(true);
+    setTimeout(() => setSavedToast(false), 1500);
+  };
+
+  const handleSave = useCallback(() => {
+    upsertLibraryEntry(buildLibraryEntry());
+    showSavedToast();
+  }, [buildLibraryEntry]);
+
+  const handleSaveAs = useCallback(() => {
+    const entry: LibraryEntry = { ...buildLibraryEntry(), id: crypto.randomUUID() };
+    upsertLibraryEntry(entry);
+    resetMeta({ id: entry.id, title: entry.title, author: entry.author });
+    showSavedToast();
+  }, [buildLibraryEntry, resetMeta]);
+
+  const doLoad = useCallback((entry: LibraryEntry) => {
+    applyTemplate(entry.grid);
+    loadCluesState(entry.clues);
+    resetMeta({ id: entry.id, title: entry.title, author: entry.author });
+    setLibraryOpen(false);
+    setPendingAction(null);
+  }, [applyTemplate, loadCluesState, resetMeta]);
+
+  const doNew = useCallback(() => {
+    clearGrid();
+    resetClues();
+    resetMeta({ id: crypto.randomUUID(), title: '', author: meta.author });
+    setPendingAction(null);
+  }, [clearGrid, resetClues, resetMeta, meta.author]);
+
+  const requestAction = (action: { type: 'new' } | { type: 'load'; entry: LibraryEntry }) => {
+    if (isCompilationInProgress) {
+      setPendingAction(action);
+    } else {
+      if (action.type === 'new') doNew();
+      else doLoad(action.entry);
+    }
+  };
+
+  const confirmPendingAction = (saveFirst: boolean) => {
+    if (saveFirst) upsertLibraryEntry(buildLibraryEntry());
+    if (!pendingAction) return;
+    if (pendingAction.type === 'new') doNew();
+    else doLoad(pendingAction.entry);
+  };
 
   // Helper panel tabs
   const [helperTab, setHelperTab] = useState<HelperTab>('suggestions');
@@ -108,6 +174,54 @@ export default function App() {
 
   return (
     <div className={`h-screen overflow-hidden bg-gray-100 dark:bg-gray-900 flex flex-col${darkMode ? ' dark' : ''}`}>
+      {libraryOpen && (
+        <PuzzleLibraryModal
+          darkMode={darkMode}
+          onLoad={entry => requestAction({ type: 'load', entry })}
+          onClose={() => setLibraryOpen(false)}
+        />
+      )}
+
+      {/* Unsaved-work guard for New / Load */}
+      {pendingAction && (
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+          onClick={() => setPendingAction(null)}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-96 p-6"
+            onClick={e => e.stopPropagation()}
+          >
+            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              {pendingAction.type === 'new' ? 'Start a new puzzle?' : 'Open another puzzle?'}
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+              Your current puzzle has unsaved changes.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPendingAction(null)}
+                className="px-4 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => confirmPendingAction(false)}
+                className="px-4 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Discard
+              </button>
+              <button
+                onClick={() => confirmPendingAction(true)}
+                className="px-4 py-1.5 rounded bg-blue-600 text-white text-sm hover:bg-blue-700 transition-colors"
+              >
+                Save &amp; Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {modal && (
         <ExportModal
           mode={modal.mode}
@@ -166,6 +280,37 @@ export default function App() {
           placeholder="Untitled puzzle"
           aria-label="Puzzle title"
         />
+        {/* File operations */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <button
+            onClick={() => requestAction({ type: 'new' })}
+            className="px-2.5 py-0.5 rounded border border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white transition-colors"
+            title="New puzzle"
+          >
+            New
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-2.5 py-0.5 rounded border border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white transition-colors"
+            title="Save to library"
+          >
+            {savedToast ? 'Saved ✓' : 'Save'}
+          </button>
+          <button
+            onClick={handleSaveAs}
+            className="px-2.5 py-0.5 rounded border border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white transition-colors"
+            title="Save as new puzzle (fork)"
+          >
+            Save As
+          </button>
+          <button
+            onClick={() => setLibraryOpen(true)}
+            className="px-2.5 py-0.5 rounded border border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white transition-colors"
+            title="Open saved puzzle"
+          >
+            Open
+          </button>
+        </div>
         {/* Right-aligned controls */}
         <div className="ml-auto flex items-center gap-3 flex-shrink-0">
           <div className="w-px h-4 bg-gray-700" />
@@ -185,7 +330,7 @@ export default function App() {
           </select>
           <div className="w-px h-4 bg-gray-700" />
           <button
-            onClick={() => setModal({ mode: 'confirm' })}
+            onClick={() => requestAction({ type: 'new' })}
             className="px-2.5 py-0.5 rounded border border-gray-700 text-gray-300 hover:border-red-500 hover:text-red-400 transition-colors"
           >
             Clear

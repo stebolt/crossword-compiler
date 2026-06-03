@@ -53,5 +53,7 @@ export function useClues() {
 
   const resetClues = useCallback(() => setClues({}), [setClues]);
 
-  return { clues, getClue, updateClue, resetClues };
+  const loadCluesState = useCallback((m: ClueMap) => setClues(m), [setClues]);
+
+  return { clues, getClue, updateClue, resetClues, loadCluesState };
 }

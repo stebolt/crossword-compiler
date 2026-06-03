@@ -35,5 +35,9 @@ export function useMeta() {
     setMeta({ ...meta, author });
   }, [meta, setMeta]);
 
-  return { meta, setTitle, setAuthor };
+  const resetMeta = useCallback((m: Meta) => {
+    setMeta(m);
+  }, [setMeta]);
+
+  return { meta, setTitle, setAuthor, resetMeta };
 }
