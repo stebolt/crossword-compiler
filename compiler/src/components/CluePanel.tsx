@@ -169,7 +169,11 @@ export function CluePanel({ slots, getClue, updateClue, cursor, direction, setCu
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline gap-2 mb-0.5">
               <div className={`font-mono text-xs tracking-widest select-none ${ANSWER_COLOR[effectiveStatus]}`}>
-                {slot.answer}
+                {myChain.length > 0
+                  ? [slot.answer, ...myChain.map(cs => slots.find(s => s.num === cs.number && s.dir === cs.direction)?.answer ?? '')].map((a, i) => (
+                      <span key={i}>{i > 0 && <span className="text-gray-300 mx-px">·</span>}{a}</span>
+                    ))
+                  : slot.answer}
               </div>
               <EnumerationInput
                 value={entry.enumeration}
