@@ -29,7 +29,6 @@ async function getWordIndex(): Promise<Map<string, string[]>> {
 }
 
 export function AnagramHelper() {
-  const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [results, setResults] = useState<string[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -53,49 +52,38 @@ export function AnagramHelper() {
   }, [input]);
 
   return (
-    <div className="border border-gray-200 rounded-md bg-white">
-      <button
-        onClick={() => setIsOpen(o => !o)}
-        className="w-full px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 hover:text-gray-800 hover:bg-gray-50 rounded-md transition-colors"
-      >
-        {isOpen ? '▼' : '▶'} Anagram Helper
-      </button>
+    <div className="px-3 py-2.5">
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && search()}
+          placeholder="Letters or phrase…"
+          className="flex-1 text-sm border border-gray-200 dark:border-gray-600 rounded px-2 py-1 outline-none focus:border-blue-400 dark:focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-300 dark:placeholder-gray-500"
+        />
+        <button
+          onClick={search}
+          disabled={loading || !input.trim()}
+          className="px-3 py-1 text-sm bg-gray-900 dark:bg-gray-600 text-white rounded hover:bg-gray-700 dark:hover:bg-gray-500 disabled:opacity-40 transition-colors"
+        >
+          {loading ? '…' : 'Find'}
+        </button>
+      </div>
 
-      {isOpen && (
-        <div className="px-3 pb-3 border-t border-gray-100">
-          <div className="flex gap-2 mt-2">
-            <input
-              type="text"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && search()}
-              placeholder="Letters or phrase…"
-              className="flex-1 text-sm border border-gray-200 rounded px-2 py-1 outline-none focus:border-blue-400"
-            />
-            <button
-              onClick={search}
-              disabled={loading || !input.trim()}
-              className="px-3 py-1 text-sm bg-gray-900 text-white rounded hover:bg-gray-700 disabled:opacity-40"
-            >
-              {loading ? '…' : 'Find'}
-            </button>
-          </div>
+      {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
 
-          {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
-
-          {results !== null && (
-            <div className="mt-2">
-              {results.length === 0 ? (
-                <p className="text-xs text-gray-400">No anagrams found.</p>
-              ) : (
-                <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
-                  {results.map(w => (
-                    <span key={w} className="text-xs font-mono bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">
-                      {w}
-                    </span>
-                  ))}
-                </div>
-              )}
+      {results !== null && (
+        <div className="mt-2">
+          {results.length === 0 ? (
+            <p className="text-xs text-gray-400 dark:text-gray-500">No anagrams found.</p>
+          ) : (
+            <div className="flex flex-wrap gap-1">
+              {results.map(w => (
+                <span key={w} className="text-xs font-mono bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-1.5 py-0.5 rounded">
+                  {w}
+                </span>
+              ))}
             </div>
           )}
         </div>

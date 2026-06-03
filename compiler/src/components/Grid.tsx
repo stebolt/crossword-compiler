@@ -132,9 +132,9 @@ export function Grid({
           display: 'grid',
           gridTemplateColumns: `repeat(${SIZE}, 36px)`,
           gridTemplateRows: `repeat(${SIZE}, 36px)`,
-          border: '2px solid #111',
           width: 'fit-content',
         }}
+        className="border-2 border-gray-900 dark:border-gray-500"
       >
         {grid.map((rowArr, r) =>
           rowArr.map((cell, c) => {
@@ -147,23 +147,23 @@ export function Grid({
             const mirrorVal = grid[mr][mc];
             const isSymmetricGhost = !isBlack && cell === '' && mirrorVal !== '' && mirrorVal !== '#';
 
-            let bg = 'bg-white';
-            if (isBlack) bg = 'bg-gray-900';
-            else if (isCursor) bg = 'bg-blue-500';
-            else if (isWord) bg = 'bg-blue-100';
-            else if (isSymmetricGhost) bg = 'bg-gray-200';
+            let bg = 'bg-white dark:bg-gray-700';
+            if (isBlack) bg = 'bg-gray-900 dark:bg-gray-950';
+            else if (isCursor) bg = 'bg-blue-500 dark:bg-blue-500';
+            else if (isWord) bg = 'bg-blue-100 dark:bg-blue-900/50';
+            else if (isSymmetricGhost) bg = 'bg-gray-200 dark:bg-gray-600';
 
             return (
               <div
                 key={key}
                 onClick={() => handleClick(r, c)}
-                className={`relative w-9 h-9 border border-gray-700 cursor-pointer select-none ${bg}`}
+                className={`relative w-9 h-9 border border-gray-700 dark:border-gray-600 cursor-pointer select-none ${bg}`}
               >
                 {!isBlack && (
                   <>
                     {num != null && (
                       <span
-                        className="absolute top-0 left-px text-gray-500 font-medium pointer-events-none"
+                        className="absolute top-0 left-px text-gray-500 dark:text-gray-400 font-medium pointer-events-none"
                         style={{ fontSize: '8px', lineHeight: '10px' }}
                       >
                         {num}
@@ -171,7 +171,7 @@ export function Grid({
                     )}
                     {cell !== '' && (
                       <span
-                        className={`absolute inset-0 flex items-center justify-center font-bold text-sm pointer-events-none ${isCursor ? 'text-white' : 'text-gray-900'}`}
+                        className={`absolute inset-0 flex items-center justify-center font-bold text-sm pointer-events-none ${isCursor ? 'text-white' : 'text-gray-900 dark:text-gray-100'}`}
                       >
                         {cell}
                       </span>
