@@ -20,14 +20,24 @@ export function useAutofill(
   const suggestions = useMemo(() => {
     if (!activeSlot) return [];
     if (!activeSlot.answer.includes('_')) return [];
-    const matches = matchPattern(activeSlot.answer);
-    if (shoehorn.length === 0) return matches.slice(0, MAX_SUGGESTIONS);
-    // Shoehorn words that match the pattern float to the top.
-    // Words already used elsewhere in the grid are intentionally not filtered out.
-    const shoehornSet = new Set(shoehorn);
-    const priority = matches.filter(w => shoehornSet.has(w));
-    const rest = matches.filter(w => !shoehornSet.has(w));
-    return [...priority, ...rest].slice(0, MAX_SUGGESTIONS);
+
+    const pattern = activeSlot.answer.toUpperCase();
+
+    // Check shoehorn words directly against the pattern — independent of the word
+    // list so custom theme words always surface if they fit. Preserves list order.
+    const shoehornMatches = shoehorn.filter(word => {
+      if (word.length !== pattern.length) return false;
+      for (let i = 0; i < pattern.length; i++) {
+        if (pattern[i] !== '_' && pattern[i] !== word[i]) return false;
+      }
+      return true;
+    });
+
+    // Word-list matches follow, excluding any already shown as shoehorn matches.
+    const shoehornSet = new Set(shoehornMatches);
+    const wordListMatches = matchPattern(pattern).filter(w => !shoehornSet.has(w));
+
+    return [...shoehornMatches, ...wordListMatches].slice(0, MAX_SUGGESTIONS);
   }, [activeSlot, shoehorn]);
 
   return { activeSlot, suggestions };

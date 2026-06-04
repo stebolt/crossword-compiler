@@ -14,16 +14,18 @@ import { CluePanel } from './components/CluePanel';
 import { AnagramHelper } from './components/AnagramHelper';
 import { WordplayHelper } from './components/WordplayHelper';
 import { SuggestionsPanel } from './components/SuggestionsPanel';
+import { ShoehornPanel } from './components/ShoehornPanel';
 import { ExportModal } from './components/ExportModal';
 import { PuzzleLibraryModal } from './components/PuzzleLibraryModal';
 import type { CrosswordMeta } from '../../shared/types';
 
-type HelperTab = 'suggestions' | 'wordplay' | 'anagram';
+type HelperTab = 'suggestions' | 'wordplay' | 'anagram' | 'shoehorn';
 
 const HELPER_TABS: { id: HelperTab; label: string }[] = [
   { id: 'suggestions', label: 'Suggestions' },
   { id: 'wordplay', label: 'Wordplay' },
   { id: 'anagram', label: 'Anagram' },
+  { id: 'shoehorn', label: 'Theme' },
 ];
 
 export default function App() {
@@ -408,12 +410,17 @@ export default function App() {
                   suggestions={suggestions}
                   shoehorn={shoehorn}
                   onFill={fillWord}
-                  onAddShoehorn={addShoehorn}
-                  onRemoveShoehorn={removeShoehorn}
                 />
               )}
               {helperTab === 'wordplay' && <WordplayHelper />}
               {helperTab === 'anagram' && <AnagramHelper />}
+              {helperTab === 'shoehorn' && (
+                <ShoehornPanel
+                  shoehorn={shoehorn}
+                  onAdd={addShoehorn}
+                  onRemove={removeShoehorn}
+                />
+              )}
             </div>
           </div>
         </div>
