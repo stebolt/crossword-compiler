@@ -8,6 +8,7 @@ import { useGrid } from './hooks/useGrid';
 import { useClues } from './hooks/useClues';
 import { useMeta } from './hooks/useMeta';
 import { useAutofill } from './hooks/useAutofill';
+import { useShoehorn } from './hooks/useShoehorn';
 import { Grid } from './components/Grid';
 import { CluePanel } from './components/CluePanel';
 import { AnagramHelper } from './components/AnagramHelper';
@@ -34,9 +35,10 @@ export default function App() {
 
   const { clues, getClue, updateClue, resetClues, loadCluesState } = useClues();
   const { meta, setTitle, resetMeta } = useMeta();
+  const { shoehorn, addWord: addShoehorn, removeWord: removeShoehorn, resetShoehorn, loadShoehornState } = useShoehorn();
 
   const slots = useMemo(() => getSlots(grid, numbers), [grid, numbers]);
-  const { activeSlot, suggestions } = useAutofill(slots, cursor, direction);
+  const { activeSlot, suggestions } = useAutofill(slots, cursor, direction, shoehorn);
 
   // Dark mode — persisted
   const [darkMode, setDarkMode] = useState(() => {
@@ -62,7 +64,8 @@ export default function App() {
     savedAt: new Date().toISOString(),
     grid,
     clues,
-  }), [meta, grid, clues]);
+    shoehorn,
+  }), [meta, grid, clues, shoehorn]);
 
   const showSavedToast = () => {
     setSavedToast(true);
@@ -85,16 +88,18 @@ export default function App() {
     applyTemplate(entry.grid);
     loadCluesState(entry.clues);
     resetMeta({ id: entry.id, title: entry.title, author: entry.author });
+    loadShoehornState(entry.shoehorn ?? []);
     setLibraryOpen(false);
     setPendingAction(null);
-  }, [applyTemplate, loadCluesState, resetMeta]);
+  }, [applyTemplate, loadCluesState, resetMeta, loadShoehornState]);
 
   const doNew = useCallback(() => {
     clearGrid();
     resetClues();
     resetMeta({ id: crypto.randomUUID(), title: '', author: meta.author });
+    resetShoehorn();
     setPendingAction(null);
-  }, [clearGrid, resetClues, resetMeta, meta.author]);
+  }, [clearGrid, resetClues, resetMeta, resetShoehorn, meta.author]);
 
   const requestAction = (action: { type: 'new' } | { type: 'load'; entry: LibraryEntry }) => {
     if (isCompilationInProgress) {
@@ -398,7 +403,14 @@ export default function App() {
             </div>
             <div className="flex-1 overflow-y-auto min-h-0">
               {helperTab === 'suggestions' && (
-                <SuggestionsPanel activeSlot={activeSlot} suggestions={suggestions} onFill={fillWord} />
+                <SuggestionsPanel
+                  activeSlot={activeSlot}
+                  suggestions={suggestions}
+                  shoehorn={shoehorn}
+                  onFill={fillWord}
+                  onAddShoehorn={addShoehorn}
+                  onRemoveShoehorn={removeShoehorn}
+                />
               )}
               {helperTab === 'wordplay' && <WordplayHelper />}
               {helperTab === 'anagram' && <AnagramHelper />}

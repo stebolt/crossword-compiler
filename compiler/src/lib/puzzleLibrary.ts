@@ -8,6 +8,7 @@ export interface LibraryEntry {
   savedAt: string; // ISO timestamp
   grid: CellValue[][];
   clues: Record<string, ClueEntry>;
+  shoehorn?: string[];
 }
 
 const LS_KEY = 'cxc-library-v1';

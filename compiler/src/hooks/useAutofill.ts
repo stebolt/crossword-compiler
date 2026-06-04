@@ -10,6 +10,7 @@ export function useAutofill(
   slots: Slot[],
   cursor: { row: number; col: number },
   direction: Direction,
+  shoehorn: string[],
 ) {
   const activeSlot = useMemo(
     () => findActiveSlot(slots, cursor, direction),
@@ -18,10 +19,16 @@ export function useAutofill(
 
   const suggestions = useMemo(() => {
     if (!activeSlot) return [];
-    // Don't suggest if the word is fully filled
     if (!activeSlot.answer.includes('_')) return [];
-    return matchPattern(activeSlot.answer).slice(0, MAX_SUGGESTIONS);
-  }, [activeSlot]);
+    const matches = matchPattern(activeSlot.answer);
+    if (shoehorn.length === 0) return matches.slice(0, MAX_SUGGESTIONS);
+    // Shoehorn words that match the pattern float to the top.
+    // Words already used elsewhere in the grid are intentionally not filtered out.
+    const shoehornSet = new Set(shoehorn);
+    const priority = matches.filter(w => shoehornSet.has(w));
+    const rest = matches.filter(w => !shoehornSet.has(w));
+    return [...priority, ...rest].slice(0, MAX_SUGGESTIONS);
+  }, [activeSlot, shoehorn]);
 
   return { activeSlot, suggestions };
 }
