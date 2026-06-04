@@ -22,10 +22,10 @@ import type { CrosswordMeta } from '../../shared/types';
 type HelperTab = 'suggestions' | 'wordplay' | 'anagram' | 'shoehorn';
 
 const HELPER_TABS: { id: HelperTab; label: string }[] = [
+  { id: 'shoehorn', label: 'Theme' },
   { id: 'suggestions', label: 'Suggestions' },
   { id: 'wordplay', label: 'Wordplay' },
   { id: 'anagram', label: 'Anagram' },
-  { id: 'shoehorn', label: 'Theme' },
 ];
 
 export default function App() {
@@ -120,7 +120,7 @@ export default function App() {
   };
 
   // Helper panel tabs
-  const [helperTab, setHelperTab] = useState<HelperTab>('suggestions');
+  const [helperTab, setHelperTab] = useState<HelperTab>('shoehorn');
   useEffect(() => {
     if (activeSlot) setHelperTab('suggestions');
   // eslint-disable-next-line react-hooks/exhaustive-deps
