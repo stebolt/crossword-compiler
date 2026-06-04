@@ -8,10 +8,13 @@ import type { Slot } from '../lib/cluePanelLogic';
 const LS_KEY = 'cxc-grid-v1';
 
 function loadGrid(initial?: CellValue[][]): CellValue[][] {
-  if (initial) return initial;
+  if (initial && initial.length === SIZE) return initial;
   try {
     const raw = localStorage.getItem(LS_KEY);
-    if (raw) return JSON.parse(raw) as CellValue[][];
+    if (raw) {
+      const parsed = JSON.parse(raw) as CellValue[][];
+      if (parsed.length === SIZE) return parsed;
+    }
   } catch { /* ignore */ }
   return createEmptyGrid();
 }

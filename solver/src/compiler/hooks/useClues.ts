@@ -24,7 +24,7 @@ export function clueKey(num: number, dir: Direction): string {
 }
 
 function loadClues(initial?: ClueMap): ClueMap {
-  if (initial) return initial;
+  if (initial && Object.keys(initial).length > 0) return initial;
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (raw) return JSON.parse(raw) as ClueMap;

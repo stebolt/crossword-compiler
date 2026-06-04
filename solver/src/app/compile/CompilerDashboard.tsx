@@ -20,17 +20,25 @@ export default function CompilerDashboard({ puzzles: initial }: Props) {
   const router = useRouter();
   const [puzzles, setPuzzles] = useState<Puzzle[]>(initial);
   const [creating, setCreating] = useState(false);
+  const [error, setError] = useState('');
   const [darkMode] = useState(() => {
     try { return localStorage.getItem('cc-dark') === '1'; } catch { return false; }
   });
 
   async function handleNew() {
     setCreating(true);
-    const res = await fetch('/api/puzzles', { method: 'POST' });
-    if (res.ok) {
-      const { id } = await res.json();
-      router.push(`/compile/${id}`);
-    } else {
+    setError('');
+    try {
+      const res = await fetch('/api/puzzles', { method: 'POST' });
+      const body = await res.json();
+      if (res.ok) {
+        router.push(`/compile/${body.id}`);
+      } else {
+        setError(`Failed to create puzzle: ${JSON.stringify(body)}`);
+        setCreating(false);
+      }
+    } catch (e) {
+      setError(`Error: ${e}`);
       setCreating(false);
     }
   }
@@ -63,6 +71,7 @@ export default function CompilerDashboard({ puzzles: initial }: Props) {
       </header>
 
       <main className="flex-1 p-8 max-w-4xl mx-auto w-full">
+        {error && <p className="text-red-400 text-sm mb-4 bg-red-900/20 border border-red-700 rounded p-3">{error}</p>}
         {puzzles.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-gray-400 dark:text-gray-500 mb-4">No puzzles yet.</p>
