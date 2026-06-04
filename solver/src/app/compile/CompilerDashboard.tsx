@@ -88,22 +88,26 @@ export default function CompilerDashboard({ puzzles: initial }: Props) {
 
   return (
     <div className={`min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col${darkMode ? ' dark' : ''}`}>
-      <header className="bg-gray-900 dark:bg-gray-950 text-white px-5 py-3 flex items-center gap-4 flex-shrink-0">
-        <h1 className="text-xs font-medium tracking-tight text-gray-400 uppercase">Crossword Compiler</h1>
+      <header className="bg-gray-900 dark:bg-gray-950 text-white px-5 py-2.5 flex items-center gap-3 text-sm flex-shrink-0">
+        <span className="text-xs font-medium tracking-tight text-gray-400 uppercase">Crosswords</span>
         <div className="w-px h-4 bg-gray-700" />
         <span className="text-sm font-semibold text-white">My Puzzles</span>
+        <div className="w-px h-4 bg-gray-700" />
+        <button
+          onClick={handleNew}
+          disabled={creating}
+          className="px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium transition-colors"
+        >
+          {creating ? 'Creating…' : '+ New Puzzle'}
+        </button>
         <div className="ml-auto flex items-center gap-3">
           <Link href="/" className="text-xs text-gray-400 hover:text-white transition-colors">
-            View solver ↗
+            Solve ↗
           </Link>
           <div className="w-px h-4 bg-gray-700" />
-          <button
-            onClick={handleNew}
-            disabled={creating}
-            className="px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium transition-colors"
-          >
-            {creating ? 'Creating…' : '+ New Puzzle'}
-          </button>
+          <form action="/api/auth/signout" method="POST">
+            <button type="submit" className="text-gray-400 hover:text-white transition-colors text-xs">Sign out</button>
+          </form>
         </div>
       </header>
 
@@ -161,6 +165,7 @@ export default function CompilerDashboard({ puzzles: initial }: Props) {
                     </span>
                   </div>
                   <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                    {p.author && <span className="text-gray-500 dark:text-gray-400">By {p.author} · </span>}
                     Last saved {fmt(p.updated_at)}
                     {p.published_at && ` · Published ${fmt(p.published_at)}`}
                   </p>
@@ -177,18 +182,8 @@ export default function CompilerDashboard({ puzzles: initial }: Props) {
                     onClick={() => router.push(`/compile/${p.id}`)}
                     className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-xs hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
                   >
-                    Open
+                    Edit
                   </button>
-                  {p.status === 'published' && (
-                    <a
-                      href={`/solve/${p.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-xs hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
-                    >
-                      Solve
-                    </a>
-                  )}
                   {p.status === 'published' && (
                     <button
                       onClick={() => handleUnpublish(p.id)}

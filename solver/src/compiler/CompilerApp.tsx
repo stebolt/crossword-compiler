@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { TEMPLATES } from './lib/gridLogic';
 import type { Template } from './lib/gridLogic';
 import { getSlots } from './lib/cluePanelLogic';
-import { validateCrossword, buildCrossword, downloadJson } from './lib/crosswordExport';
+import { validateCrossword } from './lib/crosswordExport';
 import { savePuzzle, publishPuzzle } from './lib/puzzleLibrary';
 import { useGrid } from './hooks/useGrid';
 import { useClues } from './hooks/useClues';
@@ -58,7 +58,7 @@ export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props
   } = useGrid(initial?.grid);
 
   const { clues, getClue, updateClue, resetClues, loadCluesState } = useClues(initial?.clues);
-  const { meta, setTitle, resetMeta } = useMeta(initial?.meta);
+  const { meta, setTitle, setAuthor, resetMeta } = useMeta(initial?.meta);
   const { shoehorn, addWord: addShoehorn, removeWord: removeShoehorn, resetShoehorn, loadShoehornState } = useShoehorn(initial?.shoehorn);
 
   const slots = useMemo(() => getSlots(grid, numbers), [grid, numbers]);
@@ -133,11 +133,6 @@ export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props
     | null
   >(null);
 
-  function handleExport() {
-    const crossword = buildCrossword(grid, slots, getClue, meta);
-    downloadJson(crossword, `${crossword.meta.id}.json`);
-  }
-
   async function handlePublish() {
     const { valid, errors } = validateCrossword(slots, getClue);
     if (!valid) { setModal({ mode: 'errors', errors }); return; }
@@ -196,6 +191,13 @@ export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props
           placeholder="Untitled puzzle"
           aria-label="Puzzle title"
         />
+        <input
+          value={meta.author}
+          onChange={e => setAuthor(e.target.value)}
+          className="w-36 text-sm bg-transparent border-b border-transparent hover:border-gray-600 focus:border-gray-400 focus:outline-none placeholder-gray-600 text-gray-300"
+          placeholder="Setter name…"
+          aria-label="Setter name"
+        />
 
         <div className="ml-auto flex items-center gap-3 flex-shrink-0">
           <span className={`text-xs ${saveStatus === 'error' ? 'text-red-400' : 'text-gray-500'}`}>{saveStatus !== 'idle' ? saveLabel : ''}</span>
@@ -206,7 +208,10 @@ export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props
             Save
           </button>
           <div className="w-px h-4 bg-gray-700" />
-          <span className="text-gray-400">Template:</span>
+          <button onClick={handlePublish} className="px-2.5 py-0.5 rounded bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors">
+            Publish
+          </button>
+          <div className="w-px h-4 bg-gray-700" />
           <select
             value=""
             onChange={e => {
@@ -222,33 +227,15 @@ export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props
           </select>
           <div className="w-px h-4 bg-gray-700" />
           <button
-            onClick={() => setModal({ mode: 'confirm' })}
-            className="px-2.5 py-0.5 rounded border border-gray-700 text-gray-300 hover:border-red-500 hover:text-red-400 transition-colors"
-          >
-            Clear
-          </button>
-          <div className="w-px h-4 bg-gray-700" />
-          <button onClick={handleExport} className="px-2.5 py-0.5 rounded border border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white transition-colors">
-            Export JSON
-          </button>
-          <button onClick={handlePublish} className="px-2.5 py-0.5 rounded bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors">
-            Publish
-          </button>
-          {isPublished && (
-            <>
-              <div className="w-px h-4 bg-gray-700" />
-              <Link href={`/solve/${puzzleId}`} target="_blank" rel="noopener noreferrer" className="px-2.5 py-0.5 rounded border border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white transition-colors text-xs">
-                View puzzle ↗
-              </Link>
-            </>
-          )}
-          <div className="w-px h-4 bg-gray-700" />
-          <button
             onClick={onToggleDark}
             className="px-2.5 py-0.5 rounded border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition-colors"
           >
             {darkMode ? '☀ Light' : '☾ Dark'}
           </button>
+          <div className="w-px h-4 bg-gray-700" />
+          <form action="/api/auth/signout" method="POST">
+            <button type="submit" className="text-gray-400 hover:text-white transition-colors text-xs">Sign out</button>
+          </form>
         </div>
       </header>
 

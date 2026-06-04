@@ -20,6 +20,9 @@ export function CrosswordSolver({ crossword }: Props) {
   const [direction, setDirection] = useState<Direction>("across");
   const [checkMode, setCheckMode] = useState<"off" | "word" | "grid">("off");
   const [clueTab, setClueTab] = useState<Direction>("across");
+  const [pendingConfirm, setPendingConfirm] = useState<"reveal-all" | "clear-grid" | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const helpRef = useRef<HTMLDivElement>(null);
 
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -27,6 +30,15 @@ export function CrosswordSolver({ crossword }: Props) {
   useEffect(() => {
     setClueTab(direction);
   }, [direction]);
+
+  useEffect(() => {
+    if (!helpOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (helpRef.current && !helpRef.current.contains(e.target as Node)) setHelpOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [helpOpen]);
 
   // Load persisted progress after mount to avoid hydration mismatch
   useEffect(() => {
@@ -81,6 +93,16 @@ export function CrosswordSolver({ crossword }: Props) {
     }
     return cells;
   }, [activeClue, direction]);
+
+  const activeWordComplete = useMemo(() => {
+    if (!activeClue) return false;
+    for (let i = 0; i < activeClue.length; i++) {
+      const r = direction === "across" ? activeClue.row : activeClue.row + i;
+      const c = direction === "across" ? activeClue.col + i : activeClue.col;
+      if (!userGrid[r][c]) return false;
+    }
+    return true;
+  }, [activeClue, direction, userGrid]);
 
   const isComplete = useMemo(() => {
     for (let r = 0; r < 15; r++) {
@@ -292,82 +314,105 @@ export function CrosswordSolver({ crossword }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">
-      <header className="border-b border-gray-700 px-4 sm:px-6 py-3 shrink-0">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-          {/* Title row */}
-          <div className="flex items-center gap-3 min-w-0">
-            <Link href="/" className="text-sm text-gray-500 hover:text-gray-200 transition-colors shrink-0">
-              ← All puzzles
-            </Link>
-            <div className="min-w-0">
-              <h1 className="text-base sm:text-lg font-semibold text-gray-100 leading-tight truncate">{meta.title}</h1>
-              <p className="text-xs text-gray-500">
-                By {meta.author} · {meta.publishedAt}
-              </p>
+      {pendingConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setPendingConfirm(null)}>
+          <div className="bg-gray-800 rounded-lg shadow-xl p-5 w-72 border border-gray-700" onClick={e => e.stopPropagation()}>
+            <p className="text-sm text-gray-200 mb-4">
+              {pendingConfirm === "reveal-all"
+                ? "Reveal the entire grid? This cannot be undone."
+                : "Clear all letters? This cannot be undone."}
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setPendingConfirm(null)}
+                className="px-3 py-1.5 rounded border border-gray-600 text-gray-300 text-sm hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (pendingConfirm === "reveal-all") revealAll();
+                  else clearGrid();
+                  setPendingConfirm(null);
+                }}
+                className="px-3 py-1.5 rounded bg-red-600 text-white text-sm hover:bg-red-700 transition-colors"
+              >
+                {pendingConfirm === "reveal-all" ? "Reveal Grid" : "Clear Grid"}
+              </button>
             </div>
-            {isComplete && (
-              <span className="sm:hidden text-sm font-medium text-green-400 bg-green-900/30 border border-green-700 px-3 py-1 rounded-full shrink-0">
-                Complete!
-              </span>
+          </div>
+        </div>
+      )}
+      <header className="border-b border-gray-700 bg-gray-900 px-4 sm:px-6 py-3 shrink-0">
+        <div className="flex items-center gap-3">
+          <Link href="/" className="text-xs font-medium tracking-tight text-gray-400 hover:text-white transition-colors uppercase shrink-0">
+            ← Crosswords
+          </Link>
+          <div className="w-px h-4 bg-gray-700 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base font-semibold text-gray-100 leading-tight truncate">{meta.title}</h1>
+            {(meta.author || meta.publishedAt) && (
+              <p className="text-xs text-gray-500 leading-tight">
+                {meta.author && `By ${meta.author}`}{meta.author && meta.publishedAt ? ' · ' : ''}{meta.publishedAt ?? ''}
+              </p>
             )}
           </div>
-          {/* Controls row */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-3 shrink-0">
             {isComplete && (
-              <span className="hidden sm:inline text-sm font-medium text-green-400 bg-green-900/30 border border-green-700 px-3 py-1 rounded-full">
+              <span className="text-sm font-medium text-green-400 bg-green-900/30 border border-green-700 px-3 py-1 rounded-full">
                 Complete!
               </span>
             )}
-            <div className="flex items-center rounded-md border border-gray-600 overflow-hidden text-sm">
+            <div ref={helpRef} className="relative">
               <button
-                onClick={() => setCheckMode("word")}
-                className={`px-3 py-1.5 transition-colors ${
-                  checkMode === "word"
-                    ? "bg-gray-100 text-gray-900"
-                    : "text-gray-300 hover:bg-gray-800"
+                onClick={() => setHelpOpen(o => !o)}
+                className={`px-3 py-1.5 rounded-md border text-sm transition-colors flex items-center gap-1.5 ${
+                  checkMode !== "off"
+                    ? "border-blue-500 text-blue-400 hover:bg-gray-800"
+                    : "border-gray-600 text-gray-300 hover:bg-gray-800"
                 }`}
               >
-                Check Word
+                Help <span className="text-gray-500 text-xs">{helpOpen ? "▲" : "▾"}</span>
               </button>
-              <div className="w-px bg-gray-600 self-stretch" />
-              <button
-                onClick={() => setCheckMode("grid")}
-                className={`px-3 py-1.5 transition-colors ${
-                  checkMode === "grid"
-                    ? "bg-gray-100 text-gray-900"
-                    : "text-gray-300 hover:bg-gray-800"
-                }`}
-              >
-                Check Grid
-              </button>
-            </div>
-            <button
-              onClick={clearGrid}
-              className="px-3 py-1.5 rounded-md border border-gray-600 text-sm text-gray-300 hover:bg-gray-800 transition-colors"
-            >
-              Clear Grid
-            </button>
-            <div className="flex items-center rounded-md border border-gray-600 overflow-hidden text-sm">
-              <button
-                onClick={revealCell}
-                className="px-3 py-1.5 text-gray-300 hover:bg-gray-800 transition-colors"
-              >
-                Reveal Cell
-              </button>
-              <div className="w-px bg-gray-600 self-stretch" />
-              <button
-                onClick={revealWord}
-                className="px-3 py-1.5 text-gray-300 hover:bg-gray-800 transition-colors"
-              >
-                Reveal Word
-              </button>
-              <div className="w-px bg-gray-600 self-stretch" />
-              <button
-                onClick={revealAll}
-                className="px-3 py-1.5 text-gray-300 hover:bg-gray-800 transition-colors"
-              >
-                Reveal All
-              </button>
+              {helpOpen && (
+                <div className="absolute right-0 top-full mt-1 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden z-50">
+                  <button
+                    onClick={() => { setHelpOpen(false); setCheckMode("word"); }}
+                    disabled={!activeWordComplete}
+                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                      !activeWordComplete ? "text-gray-600 cursor-not-allowed" : "text-gray-200 hover:bg-gray-700"
+                    }`}
+                  >
+                    Check Word
+                  </button>
+                  <button
+                    onClick={() => { setHelpOpen(false); setCheckMode("grid"); }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
+                  >
+                    Check Grid
+                  </button>
+                  <div className="border-t border-gray-700" />
+                  <button
+                    onClick={() => { setHelpOpen(false); revealWord(); }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
+                  >
+                    Reveal Word
+                  </button>
+                  <button
+                    onClick={() => { setHelpOpen(false); setPendingConfirm("reveal-all"); }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
+                  >
+                    Reveal Grid
+                  </button>
+                  <div className="border-t border-gray-700" />
+                  <button
+                    onClick={() => { setHelpOpen(false); setPendingConfirm("clear-grid"); }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-gray-700 transition-colors"
+                  >
+                    Clear Grid
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -381,7 +426,7 @@ export function CrosswordSolver({ crossword }: Props) {
           onKeyDown={handleKeyDown}
           className="outline-none shrink-0 self-start mx-auto lg:mx-0"
         >
-          <div className="border-2 border-gray-500 inline-block">
+          <div className="border-2 border-gray-400 inline-block">
             {grid.map((row, r) => (
               <div key={r} className="flex">
                 {row.map((cell, c) => {
@@ -399,35 +444,39 @@ export function CrosswordSolver({ crossword }: Props) {
                     letter !== cell &&
                     (checkMode === "grid" || highlightedCells.has(key));
 
-                  let bg = "bg-gray-700";
-                  if (isBlack) bg = "bg-gray-950";
+                  let bg = "bg-white";
+                  if (isBlack) bg = "bg-black";
                   else if (isActive) bg = "bg-blue-500";
-                  else if (isWrong) bg = "bg-red-900/60";
-                  else if (isRevealed && isHighlighted) bg = "bg-blue-900/50";
-                  else if (isRevealed) bg = "bg-amber-900/50";
-                  else if (isHighlighted) bg = "bg-blue-900/40";
+                  else if (isRevealed && isHighlighted) bg = "bg-blue-200";
+                  else if (isRevealed) bg = "bg-amber-200";
+                  else if (isHighlighted) bg = "bg-blue-100";
 
                   return (
                     <div
                       key={c}
                       onClick={() => handleCellClick(r, c)}
-                      className={`w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9 relative border border-gray-600 flex items-center justify-center select-none ${
+                      className={`w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9 relative border border-gray-400 flex items-center justify-center select-none ${
                         isBlack ? "cursor-default" : "cursor-pointer"
                       } ${bg}`}
                     >
                       {number !== undefined && !isBlack && (
-                        <span className="absolute top-0 left-0.5 text-[6px] sm:text-[7px] lg:text-[8px] leading-none font-medium text-gray-400">
+                        <span className="absolute top-0 left-0.5 text-[6px] sm:text-[7px] lg:text-[8px] leading-none font-medium text-gray-500">
                           {number}
                         </span>
                       )}
                       {!isBlack && letter && (
                         <span
                           className={`text-[9px] sm:text-[12px] lg:text-[15px] font-bold leading-none ${
-                            isActive ? "text-white" : "text-gray-100"
+                            isActive ? "text-white" : "text-gray-900"
                           }`}
                         >
                           {letter}
                         </span>
+                      )}
+                      {isWrong && (
+                        <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 10 10" preserveAspectRatio="none">
+                          <line x1="1.5" y1="8.5" x2="8.5" y2="1.5" stroke="rgb(239,68,68)" strokeWidth="1.2" strokeLinecap="round" />
+                        </svg>
                       )}
                     </div>
                   );
@@ -435,6 +484,26 @@ export function CrosswordSolver({ crossword }: Props) {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Mobile: active clue panel */}
+        <div className="lg:hidden bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 min-h-[4rem]">
+          {activeClue ? (
+            <>
+              <div className="text-xs font-semibold text-blue-400 mb-1">
+                {activeClue.number} {direction === "across" ? "Across" : "Down"}
+              </div>
+              <div className="text-sm text-gray-100">
+                {activeClue.clue || <span className="italic text-gray-500">No clue written</span>}
+                {' '}
+                <span className="text-gray-400">
+                  ({activeClue.wordLengths ? activeClue.wordLengths.join(',') : activeClue.length})
+                </span>
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-gray-500">Select a cell to see the clue.</p>
+          )}
         </div>
 
         {/* Mobile: tabbed clue lists */}

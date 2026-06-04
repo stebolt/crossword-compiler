@@ -11,7 +11,7 @@ export default function NavBar({ isLoggedIn }: Props) {
   const pathname = usePathname();
 
   // The compiler pages manage their own full-screen layout — hide the shared nav there
-  if (pathname?.startsWith('/compile')) return null;
+  if (pathname?.startsWith('/compile') || pathname?.startsWith('/solve')) return null;
 
   return (
     <nav className="bg-gray-900 text-white px-5 py-2.5 flex items-center gap-4 text-sm flex-shrink-0">

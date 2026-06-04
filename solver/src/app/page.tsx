@@ -7,18 +7,34 @@ function fmtDate(iso: string) {
 
 export default async function Home() {
   const supabase = await createServerClient();
-  const { data: puzzles } = await supabase
-    .from('puzzles')
-    .select('id, title, author, published_at')
-    .eq('status', 'published')
-    .order('published_at', { ascending: false });
+  const [{ data: { user } }, { data: puzzles }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.from('puzzles').select('id, title, author, published_at').eq('status', 'published').order('published_at', { ascending: false }),
+  ]);
 
   const items = puzzles ?? [];
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <main className="max-w-2xl mx-auto p-6 pt-8">
-        <h1 className="text-xl font-semibold text-white mb-6">Puzzles</h1>
+    <div className="min-h-screen bg-gray-900 flex flex-col">
+      <header className="bg-gray-900 border-b border-gray-800 text-white px-5 py-2.5 flex items-center gap-3 text-sm flex-shrink-0">
+        <span className="text-xs font-medium tracking-tight text-gray-400 uppercase">Crosswords</span>
+        <div className="ml-auto flex items-center gap-3">
+          {user ? (
+            <>
+              <Link href="/compile" className="text-gray-300 hover:text-white transition-colors text-xs">
+                Compile ↗
+              </Link>
+              <div className="w-px h-4 bg-gray-700" />
+              <form action="/api/auth/signout" method="POST">
+                <button type="submit" className="text-gray-400 hover:text-white transition-colors text-xs">Sign out</button>
+              </form>
+            </>
+          ) : (
+            <Link href="/login" className="text-gray-300 hover:text-white transition-colors text-xs">Sign in</Link>
+          )}
+        </div>
+      </header>
+      <main className="max-w-2xl mx-auto w-full p-6">
         {items.length === 0 ? (
           <p className="text-gray-500 text-sm">No puzzles published yet.</p>
         ) : (
@@ -31,7 +47,7 @@ export default async function Home() {
                 >
                   <div>
                     <div className="font-medium text-gray-100">{p.title || 'Untitled'}</div>
-                    <div className="text-xs text-gray-400 mt-0.5">By {p.author || 'Unknown'}</div>
+                    {p.author && <div className="text-xs text-gray-400 mt-0.5">By {p.author}</div>}
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-gray-500">{p.published_at ? fmtDate(p.published_at) : ''}</span>
