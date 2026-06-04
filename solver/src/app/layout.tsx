@@ -1,18 +1,23 @@
-import type { Metadata } from "next";
-import { Geist } from "next/font/google";
-import "./globals.css";
-
-const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+import type { Metadata } from 'next';
+import './globals.css';
+import { createSupabaseServerClient as createServerClient } from '@/lib/supabase-server';
+import NavBar from './NavBar';
 
 export const metadata: Metadata = {
-  title: "Crosswords",
-  description: "Crossword puzzles",
+  title: 'Crosswords',
+  description: 'Crossword puzzles',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   return (
-    <html lang="en" className={`${geist.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+    <html lang="en" className="h-full">
+      <body className="min-h-full flex flex-col">
+        <NavBar isLoggedIn={!!user} />
+        {children}
+      </body>
     </html>
   );
 }
