@@ -12,6 +12,7 @@ interface Props {
     clues?: Record<string, ClueEntry>;
     meta?: { id: string; title: string; author: string };
     shoehorn?: string[];
+    status?: string;
   };
 }
 
