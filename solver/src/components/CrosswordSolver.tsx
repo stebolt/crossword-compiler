@@ -381,7 +381,7 @@ export function CrosswordSolver({ crossword }: Props) {
           onKeyDown={handleKeyDown}
           className="outline-none shrink-0 self-start mx-auto lg:mx-0"
         >
-          <div className="border-t border-l border-gray-600 inline-block">
+          <div className="border-2 border-gray-500 inline-block">
             {grid.map((row, r) => (
               <div key={r} className="flex">
                 {row.map((cell, c) => {
@@ -399,19 +399,19 @@ export function CrosswordSolver({ crossword }: Props) {
                     letter !== cell &&
                     (checkMode === "grid" || highlightedCells.has(key));
 
-                  let bg = "bg-gray-800";
-                  if (isBlack) bg = "bg-black";
+                  let bg = "bg-gray-700";
+                  if (isBlack) bg = "bg-gray-950";
                   else if (isActive) bg = "bg-blue-500";
-                  else if (isWrong) bg = "bg-red-900/50";
+                  else if (isWrong) bg = "bg-red-900/60";
                   else if (isRevealed && isHighlighted) bg = "bg-blue-900/50";
-                  else if (isRevealed) bg = "bg-amber-900/40";
+                  else if (isRevealed) bg = "bg-amber-900/50";
                   else if (isHighlighted) bg = "bg-blue-900/40";
 
                   return (
                     <div
                       key={c}
                       onClick={() => handleCellClick(r, c)}
-                      className={`w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9 relative border-r border-b border-gray-600 flex items-center justify-center select-none ${
+                      className={`w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9 relative border border-gray-600 flex items-center justify-center select-none ${
                         isBlack ? "cursor-default" : "cursor-pointer"
                       } ${bg}`}
                     >

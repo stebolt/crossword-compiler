@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CompilerApp } from '@/compiler/CompilerApp';
 import type { CellValue } from '../../../../../shared/types';
 import type { ClueEntry } from '@/compiler/hooks/useClues';
@@ -17,9 +17,10 @@ interface Props {
 }
 
 export default function CompilerWrapper({ puzzleId, initial }: Props) {
-  const [darkMode, setDarkMode] = useState(() => {
-    try { return localStorage.getItem('cc-dark') === '1'; } catch { return false; }
-  });
+  const [darkMode, setDarkMode] = useState(false);
+  useEffect(() => {
+    try { setDarkMode(localStorage.getItem('cc-dark') === '1'); } catch {}
+  }, []);
 
   const toggleDark = () => setDarkMode(d => {
     const next = !d;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -22,9 +22,10 @@ export default function CompilerDashboard({ puzzles: initial }: Props) {
   const [puzzles, setPuzzles] = useState<Puzzle[]>(initial);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
-  const [darkMode] = useState(() => {
-    try { return localStorage.getItem('cc-dark') === '1'; } catch { return false; }
-  });
+  const [darkMode, setDarkMode] = useState(false);
+  useEffect(() => {
+    try { setDarkMode(localStorage.getItem('cc-dark') === '1'); } catch {}
+  }, []);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const renameInputRef = useRef<HTMLInputElement>(null);
