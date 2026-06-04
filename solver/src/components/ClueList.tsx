@@ -25,7 +25,7 @@ export function ClueList({ direction, clues, activeClue, filledClues, onClueClic
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2 shrink-0">
+      <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2 shrink-0">
         {direction === "across" ? "Across" : "Down"}
       </h2>
       <ul className="flex-1 min-h-0 overflow-y-auto space-y-px">
@@ -42,17 +42,17 @@ export function ClueList({ direction, clues, activeClue, filledClues, onClueClic
                 isActive
                   ? "bg-blue-500 text-white"
                   : isLinked
-                  ? "text-zinc-400 hover:bg-zinc-100"
+                  ? "text-gray-500 hover:bg-gray-800"
                   : isFilled
-                  ? "text-zinc-300 hover:bg-zinc-100"
-                  : "text-zinc-600 hover:bg-zinc-100"
+                  ? "text-gray-600 hover:bg-gray-800"
+                  : "text-gray-300 hover:bg-gray-800"
               }`}
             >
               <span className="font-semibold shrink-0 w-5 text-right">{clue.number}</span>
               <span className={isLinked ? "italic" : ""}>
                 {clue.clue}{" "}
                 {!isLinked && (
-                  <span className={isActive ? "text-blue-200" : isFilled ? "text-zinc-200" : "text-zinc-400"}>
+                  <span className={isActive ? "text-blue-200" : isFilled ? "text-gray-500" : "text-gray-500"}>
                     {enumeration(clue)}
                   </span>
                 )}

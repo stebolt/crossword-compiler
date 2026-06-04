@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 interface Puzzle {
@@ -21,9 +22,13 @@ export default function CompilerDashboard({ puzzles: initial }: Props) {
   const [puzzles, setPuzzles] = useState<Puzzle[]>(initial);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
-  const [darkMode] = useState(() => {
-    try { return localStorage.getItem('cc-dark') === '1'; } catch { return false; }
-  });
+  const [darkMode, setDarkMode] = useState(false);
+  useEffect(() => {
+    try { setDarkMode(localStorage.getItem('cc-dark') === '1'); } catch {}
+  }, []);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const renameInputRef = useRef<HTMLInputElement>(null);
 
   async function handleNew() {
     setCreating(true);
@@ -43,10 +48,38 @@ export default function CompilerDashboard({ puzzles: initial }: Props) {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Delete this puzzle? This cannot be undone.')) return;
+  async function handleDelete(id: string, isPublished: boolean) {
+    const msg = isPublished
+      ? 'This puzzle is published and will be removed from the public solver. Delete anyway?'
+      : 'Delete this puzzle? This cannot be undone.';
+    if (!confirm(msg)) return;
     await fetch(`/api/puzzles/${id}`, { method: 'DELETE' });
     setPuzzles(p => p.filter(x => x.id !== id));
+  }
+
+  async function handleUnpublish(id: string) {
+    if (!confirm('Unpublish this puzzle? It will no longer appear on the public solver.')) return;
+    const res = await fetch(`/api/puzzles/${id}/unpublish`, { method: 'POST' });
+    if (res.ok) {
+      setPuzzles(p => p.map(x => x.id === id ? { ...x, status: 'draft', published_at: null } : x));
+    }
+  }
+
+  function startRename(p: Puzzle) {
+    setRenamingId(p.id);
+    setRenameValue(p.title || '');
+    setTimeout(() => renameInputRef.current?.select(), 0);
+  }
+
+  async function commitRename(id: string) {
+    const title = renameValue.trim() || 'Untitled';
+    setRenamingId(null);
+    setPuzzles(p => p.map(x => x.id === id ? { ...x, title } : x));
+    await fetch(`/api/puzzles/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title }),
+    });
   }
 
   function fmt(iso: string) {
@@ -59,7 +92,11 @@ export default function CompilerDashboard({ puzzles: initial }: Props) {
         <h1 className="text-xs font-medium tracking-tight text-gray-400 uppercase">Crossword Compiler</h1>
         <div className="w-px h-4 bg-gray-700" />
         <span className="text-sm font-semibold text-white">My Puzzles</span>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-3">
+          <Link href="/" className="text-xs text-gray-400 hover:text-white transition-colors">
+            View solver ↗
+          </Link>
+          <div className="w-px h-4 bg-gray-700" />
           <button
             onClick={handleNew}
             disabled={creating}
@@ -92,12 +129,29 @@ export default function CompilerDashboard({ puzzles: initial }: Props) {
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => router.push(`/compile/${p.id}`)}
-                      className="text-sm font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 truncate transition-colors"
-                    >
-                      {p.title || 'Untitled'}
-                    </button>
+                    {renamingId === p.id ? (
+                      <input
+                        ref={renameInputRef}
+                        value={renameValue}
+                        onChange={e => setRenameValue(e.target.value)}
+                        onBlur={() => commitRename(p.id)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') commitRename(p.id);
+                          if (e.key === 'Escape') setRenamingId(null);
+                        }}
+                        className="text-sm font-semibold text-gray-900 dark:text-gray-100 bg-transparent border-b border-gray-400 dark:border-gray-500 focus:outline-none focus:border-blue-500 min-w-0 flex-1"
+                        autoFocus
+                      />
+                    ) : (
+                      <button
+                        onClick={() => router.push(`/compile/${p.id}`)}
+                        onDoubleClick={() => startRename(p)}
+                        title="Double-click to rename"
+                        className="text-sm font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 truncate transition-colors text-left"
+                      >
+                        {p.title || 'Untitled'}
+                      </button>
+                    )}
                     <span className={`text-xs px-1.5 py-0.5 rounded font-medium flex-shrink-0 ${
                       p.status === 'published'
                         ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400'
@@ -112,6 +166,13 @@ export default function CompilerDashboard({ puzzles: initial }: Props) {
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => startRename(p)}
+                    className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 text-xs hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+                    title="Rename"
+                  >
+                    Rename
+                  </button>
                   <button
                     onClick={() => router.push(`/compile/${p.id}`)}
                     className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-xs hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
@@ -128,14 +189,20 @@ export default function CompilerDashboard({ puzzles: initial }: Props) {
                       Solve
                     </a>
                   )}
-                  {p.status === 'draft' && (
+                  {p.status === 'published' && (
                     <button
-                      onClick={() => handleDelete(p.id)}
-                      className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 text-xs hover:border-red-400 hover:text-red-500 transition-colors"
+                      onClick={() => handleUnpublish(p.id)}
+                      className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 text-xs hover:border-amber-400 hover:text-amber-500 transition-colors"
                     >
-                      Delete
+                      Unpublish
                     </button>
                   )}
+                  <button
+                    onClick={() => handleDelete(p.id, p.status === 'published')}
+                    className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 text-xs hover:border-red-400 hover:text-red-500 transition-colors"
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             ))}

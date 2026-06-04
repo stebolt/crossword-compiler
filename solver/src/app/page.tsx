@@ -1,37 +1,19 @@
 import Link from 'next/link';
 import { createSupabaseServerClient as createServerClient } from '@/lib/supabase-server';
-import { computeNumbers } from '@/compiler/lib/gridLogic';
-import { getSlots } from '@/compiler/lib/cluePanelLogic';
-import type { CellValue } from '../../../shared/types';
 
-function computeDifficulty(grid: CellValue[][]): 'Easy' | 'Medium' | 'Hard' {
-  const numbers = computeNumbers(grid);
-  const slots = getSlots(grid, numbers);
-  if (slots.length === 0) return 'Medium';
-  const avg = slots.reduce((sum, s) => sum + s.length, 0) / slots.length;
-  if (avg < 7) return 'Easy';
-  if (avg <= 9) return 'Medium';
-  return 'Hard';
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
-
-const difficultyStyle = {
-  Easy: 'bg-green-900/30 text-green-400 border-green-700',
-  Medium: 'bg-amber-900/30 text-amber-400 border-amber-700',
-  Hard: 'bg-red-900/30 text-red-400 border-red-700',
-};
 
 export default async function Home() {
   const supabase = await createServerClient();
   const { data: puzzles } = await supabase
     .from('puzzles')
-    .select('id, title, author, published_at, grid')
+    .select('id, title, author, published_at')
     .eq('status', 'published')
     .order('published_at', { ascending: false });
 
-  const items = (puzzles ?? []).map(p => ({
-    ...p,
-    difficulty: p.grid ? computeDifficulty(p.grid as CellValue[][]) : null,
-  }));
+  const items = puzzles ?? [];
 
   return (
     <div className="min-h-screen bg-gray-900">
@@ -52,12 +34,7 @@ export default async function Home() {
                     <div className="text-xs text-gray-400 mt-0.5">By {p.author || 'Unknown'}</div>
                   </div>
                   <div className="flex items-center gap-3">
-                    {p.difficulty && (
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${difficultyStyle[p.difficulty]}`}>
-                        {p.difficulty}
-                      </span>
-                    )}
-                    <span className="text-xs text-gray-500">{p.published_at?.split('T')[0]}</span>
+                    <span className="text-xs text-gray-500">{p.published_at ? fmtDate(p.published_at) : ''}</span>
                   </div>
                 </Link>
               </li>

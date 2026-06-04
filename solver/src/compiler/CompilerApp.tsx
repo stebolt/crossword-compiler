@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { TEMPLATES } from './lib/gridLogic';
 import type { Template } from './lib/gridLogic';
@@ -36,6 +37,7 @@ interface InitialData {
   clues?: Record<string, ClueEntry>;
   meta?: { id: string; title: string; author: string };
   shoehorn?: string[];
+  status?: string;
 }
 
 interface Props {
@@ -47,6 +49,7 @@ interface Props {
 
 export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props) {
   const router = useRouter();
+  const [isPublished, setIsPublished] = useState(initial?.status === 'published');
 
   const {
     grid, cursor, setCursor, direction, setDirection,
@@ -142,6 +145,7 @@ export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props
     await savePuzzle(puzzleId, { title: meta.title, author: meta.author, grid, clues, shoehorn });
     const result = await publishPuzzle(puzzleId);
     if (!result.ok) { setModal({ mode: 'errors', errors: result.errors ?? ['Publish failed'] }); return; }
+    setIsPublished(true);
     setModal({ mode: 'published' });
   }
 
@@ -230,6 +234,14 @@ export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props
           <button onClick={handlePublish} className="px-2.5 py-0.5 rounded bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors">
             Publish
           </button>
+          {isPublished && (
+            <>
+              <div className="w-px h-4 bg-gray-700" />
+              <Link href={`/solve/${puzzleId}`} target="_blank" rel="noopener noreferrer" className="px-2.5 py-0.5 rounded border border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white transition-colors text-xs">
+                View puzzle ↗
+              </Link>
+            </>
+          )}
           <div className="w-px h-4 bg-gray-700" />
           <button
             onClick={onToggleDark}

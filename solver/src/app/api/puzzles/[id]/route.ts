@@ -32,9 +32,16 @@ export async function PATCH(
   const body = await req.json();
   const { title, author, grid, clues, shoehorn } = body;
 
+  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (title !== undefined) patch.title = title;
+  if (author !== undefined) patch.author = author;
+  if (grid !== undefined) patch.grid = grid;
+  if (clues !== undefined) patch.clues = clues;
+  if (shoehorn !== undefined) patch.shoehorn = shoehorn;
+
   const { error } = await supabase
     .from('puzzles')
-    .update({ title, author, grid, clues, shoehorn, updated_at: new Date().toISOString() })
+    .update(patch)
     .eq('id', id)
     .eq('owner_id', user.id);
 
@@ -55,8 +62,7 @@ export async function DELETE(
     .from('puzzles')
     .delete()
     .eq('id', id)
-    .eq('owner_id', user.id)
-    .eq('status', 'draft');
+    .eq('owner_id', user.id);
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ ok: true });
