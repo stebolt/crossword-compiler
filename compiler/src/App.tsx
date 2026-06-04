@@ -22,8 +22,8 @@ import type { CrosswordMeta } from '../../shared/types';
 type HelperTab = 'suggestions' | 'wordplay' | 'anagram' | 'shoehorn';
 
 const HELPER_TABS: { id: HelperTab; label: string }[] = [
-  { id: 'shoehorn', label: 'Theme' },
   { id: 'suggestions', label: 'Suggestions' },
+  { id: 'shoehorn', label: 'Theme' },
   { id: 'wordplay', label: 'Wordplay' },
   { id: 'anagram', label: 'Anagram' },
 ];
@@ -120,7 +120,7 @@ export default function App() {
   };
 
   // Helper panel tabs
-  const [helperTab, setHelperTab] = useState<HelperTab>('shoehorn');
+  const [helperTab, setHelperTab] = useState<HelperTab>('suggestions');
   useEffect(() => {
     if (activeSlot) setHelperTab('suggestions');
   // eslint-disable-next-line react-hooks/exhaustive-deps
