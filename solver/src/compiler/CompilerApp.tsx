@@ -20,6 +20,7 @@ import { WordplayHelper } from './components/WordplayHelper';
 import { SuggestionsPanel } from './components/SuggestionsPanel';
 import { ShoehornPanel } from './components/ShoehornPanel';
 import { ExportModal } from './components/ExportModal';
+import { HelpModal } from './components/HelpModal';
 import type { CellValue } from '../../../shared/types';
 import type { ClueEntry } from './hooks/useClues';
 
@@ -149,8 +150,12 @@ export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props
 
   const saveLabel = saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved ✓' : saveStatus === 'error' ? 'Save failed' : 'Save';
 
+  const [helpOpen, setHelpOpen] = useState(false);
+
   return (
     <div className={`h-screen overflow-hidden bg-gray-100 dark:bg-gray-900 flex flex-col${darkMode ? ' dark' : ''}`}>
+      {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} />}
+
       {modal && (
         <ExportModal
           mode={modal.mode === 'errors' ? 'errors' : modal.mode === 'published' ? 'published' : 'confirm'}
@@ -225,6 +230,13 @@ export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props
               <option key={t.name} value={t.name}>{t.name}</option>
             ))}
           </select>
+          <div className="w-px h-4 bg-gray-700" />
+          <button
+            onClick={() => setHelpOpen(true)}
+            className="px-2.5 py-0.5 rounded border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition-colors"
+          >
+            Help
+          </button>
           <div className="w-px h-4 bg-gray-700" />
           <button
             onClick={onToggleDark}
