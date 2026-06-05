@@ -8,5 +8,8 @@
   "scripts": {
     "compiler": "npm run dev --workspace=compiler",
     "solver": "npm run dev --workspace=solver"
+  },
+  "devDependencies": {
+    "playwright": "^1.60.0"
   }
 }
