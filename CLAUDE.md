@@ -72,9 +72,13 @@ create policy "published_read" on public.puzzles
 
 Add users via Supabase dashboard → Authentication → Invite user. No public sign-up.
 
+## Deployment
+
+- Production: https://crossword-compiler-solver.vercel.app/
+
 ## Current Status
 
-Phase 6+7 in progress (unified app + Supabase backend). Compiler is migrated into the solver's Next.js app on branch `phase7-unified-app`.
+Phase 6+7 complete and shipped. Compiler is merged into the solver's Next.js app on `main` and deployed to Vercel.
 
 - Full spec: `/Users/steve/Vault/01 Atlas/Projects/Crossword Compiler/Spec.md`
 - Backlog: `/Users/steve/Vault/01 Atlas/Projects/Crossword Compiler/Backlog.md`
