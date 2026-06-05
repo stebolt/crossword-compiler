@@ -11,5 +11,5 @@ export default async function CompilePage() {
     .eq('owner_id', user!.id)
     .order('updated_at', { ascending: false });
 
-  return <CompilerDashboard puzzles={puzzles ?? []} />;
+  return <CompilerDashboard puzzles={puzzles ?? []} isAdmin={user!.email === 'tech@stebolt.ch'} />;
 }

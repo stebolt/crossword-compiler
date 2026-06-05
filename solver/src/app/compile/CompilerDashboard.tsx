@@ -15,9 +15,10 @@ interface Puzzle {
 
 interface Props {
   puzzles: Puzzle[];
+  isAdmin?: boolean;
 }
 
-export default function CompilerDashboard({ puzzles: initial }: Props) {
+export default function CompilerDashboard({ puzzles: initial, isAdmin }: Props) {
   const router = useRouter();
   const [puzzles, setPuzzles] = useState<Puzzle[]>(initial);
   const [creating, setCreating] = useState(false);
@@ -101,6 +102,14 @@ export default function CompilerDashboard({ puzzles: initial }: Props) {
           {creating ? 'Creating…' : '+ New Puzzle'}
         </button>
         <div className="ml-auto flex items-center gap-3">
+          {isAdmin && (
+            <>
+              <Link href="/compile/admin" className="text-xs text-gray-400 hover:text-white transition-colors">
+                Invite
+              </Link>
+              <div className="w-px h-4 bg-gray-700" />
+            </>
+          )}
           <Link href="/" className="text-xs text-gray-400 hover:text-white transition-colors">
             Solve ↗
           </Link>
