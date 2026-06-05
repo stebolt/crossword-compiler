@@ -12,14 +12,12 @@ solver/       Next.js 16 — the unified app (compiler + solver), deployed to Ve
       api/puzzles/      CRUD + publish API routes
       api/auth/         Sign-out
       login/            Login page
-    compiler/           Migrated compiler components, hooks, lib
+    compiler/           Compiler components, hooks, lib
     components/         Solver components (CrosswordSolver, ClueList)
     lib/                Supabase clients (supabase-browser.ts, supabase-server.ts)
   proxy.ts              Auth protection for /compile/* routes
   public/word-lists/    Word list served to the client
-compiler/     Original React + Vite app — archived, kept as reference
-shared/       TypeScript types shared by both apps
-word-lists/   Source word lists
+shared/       TypeScript types shared across the app
 ```
 
 ## Running

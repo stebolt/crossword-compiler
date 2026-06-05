@@ -8,10 +8,6 @@ dist/
 .next/
 out/
 
-# Word lists (can be large — add manually with git add -f)
-word-lists/*.txt
-!word-lists/english.txt
-
 # OS
 .DS_Store
 
