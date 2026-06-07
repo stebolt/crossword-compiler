@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   );
 
   const { error } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: 'https://crossword-compiler-solver.vercel.app/compile',
+    redirectTo: 'https://crossword-compiler-solver.vercel.app/set-password',
   });
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
