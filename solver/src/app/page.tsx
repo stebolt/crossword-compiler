@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { createSupabaseServerClient as createServerClient } from '@/lib/supabase-server';
+import AppTabs from '@/components/AppTabs';
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -16,14 +17,15 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">
-      <header className="bg-gray-900 border-b border-gray-800 text-white px-5 py-2.5 flex items-center gap-3 text-sm flex-shrink-0">
+      <header className="bg-gray-900 border-b border-gray-800 text-white px-5 py-2 flex items-center text-sm flex-shrink-0 relative">
         <span className="text-xs font-medium tracking-tight text-gray-400 uppercase">Crosswords</span>
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <AppTabs />
+        </div>
         <div className="ml-auto flex items-center gap-3">
           {user ? (
             <>
-              <Link href="/compile" className="text-gray-300 hover:text-white transition-colors text-xs">
-                Compile ↗
-              </Link>
+              <span className="text-xs text-gray-500">{user.email}</span>
               <div className="w-px h-4 bg-gray-700" />
               <form action="/api/auth/signout" method="POST">
                 <button type="submit" className="text-gray-400 hover:text-white transition-colors text-xs">Sign out</button>
