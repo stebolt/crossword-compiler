@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import AppTabs from '@/components/AppTabs';
 
 interface Puzzle {
   id: string;
@@ -16,9 +17,10 @@ interface Puzzle {
 interface Props {
   puzzles: Puzzle[];
   isAdmin?: boolean;
+  userEmail?: string;
 }
 
-export default function CompilerDashboard({ puzzles: initial, isAdmin }: Props) {
+export default function CompilerDashboard({ puzzles: initial, isAdmin, userEmail }: Props) {
   const router = useRouter();
   const [puzzles, setPuzzles] = useState<Puzzle[]>(initial);
   const [creating, setCreating] = useState(false);
@@ -89,18 +91,21 @@ export default function CompilerDashboard({ puzzles: initial, isAdmin }: Props) 
 
   return (
     <div className={`min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col${darkMode ? ' dark' : ''}`}>
-      <header className="bg-gray-900 dark:bg-gray-950 text-white px-5 py-2.5 flex items-center gap-3 text-sm flex-shrink-0">
-        <span className="text-xs font-medium tracking-tight text-gray-400 uppercase">Crosswords</span>
-        <div className="w-px h-4 bg-gray-700" />
-        <span className="text-sm font-semibold text-white">My Puzzles</span>
-        <div className="w-px h-4 bg-gray-700" />
-        <button
-          onClick={handleNew}
-          disabled={creating}
-          className="px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium transition-colors"
-        >
-          {creating ? 'Creating…' : '+ New Puzzle'}
-        </button>
+      <header className="bg-gray-900 dark:bg-gray-950 text-white px-5 py-2 flex items-center text-sm flex-shrink-0 relative">
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-medium tracking-tight text-gray-400 uppercase">Crosswords</span>
+          <div className="w-px h-4 bg-gray-700" />
+          <button
+            onClick={handleNew}
+            disabled={creating}
+            className="px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium transition-colors"
+          >
+            {creating ? 'Creating…' : '+ New Puzzle'}
+          </button>
+        </div>
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <AppTabs />
+        </div>
         <div className="ml-auto flex items-center gap-3">
           {isAdmin && (
             <>
@@ -110,10 +115,12 @@ export default function CompilerDashboard({ puzzles: initial, isAdmin }: Props) 
               <div className="w-px h-4 bg-gray-700" />
             </>
           )}
-          <Link href="/" className="text-xs text-gray-400 hover:text-white transition-colors">
-            Solve ↗
-          </Link>
-          <div className="w-px h-4 bg-gray-700" />
+          {userEmail && (
+            <>
+              <span className="text-xs text-gray-500">{userEmail}</span>
+              <div className="w-px h-4 bg-gray-700" />
+            </>
+          )}
           <form action="/api/auth/signout" method="POST">
             <button type="submit" className="text-gray-400 hover:text-white transition-colors text-xs">Sign out</button>
           </form>
