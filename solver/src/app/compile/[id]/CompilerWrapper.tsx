@@ -13,6 +13,7 @@ interface Props {
     meta?: { id: string; title: string; author: string };
     shoehorn?: string[];
     status?: string;
+    symmetry?: boolean;
   };
 }
 

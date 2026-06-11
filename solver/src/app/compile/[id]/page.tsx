@@ -11,7 +11,7 @@ export default async function CompileEditPage(
 
   const { data: puzzle } = await supabase
     .from('puzzles')
-    .select('id, title, author, grid, clues, shoehorn, status')
+    .select('id, title, author, grid, clues, shoehorn, status, symmetry')
     .eq('id', id)
     .eq('owner_id', user!.id)
     .single();
@@ -27,6 +27,7 @@ export default async function CompileEditPage(
         meta: { id: puzzle.id, title: puzzle.title, author: puzzle.author },
         shoehorn: puzzle.shoehorn ?? [],
         status: puzzle.status ?? 'draft',
+        symmetry: puzzle.symmetry ?? true,
       }}
     />
   );
