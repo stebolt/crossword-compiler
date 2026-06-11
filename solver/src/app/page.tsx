@@ -17,7 +17,7 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">
-      <header className="bg-gray-900 border-b border-gray-800 text-white px-5 py-2 flex items-center text-sm flex-shrink-0 relative">
+      <header className="bg-gray-900 dark:bg-gray-950 text-white px-5 py-2 flex items-center text-sm flex-shrink-0 relative">
         <span className="text-xs font-medium tracking-tight text-gray-400 uppercase">Crosswords</span>
         <div className="absolute left-1/2 -translate-x-1/2">
           <AppTabs />
