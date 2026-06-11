@@ -39,6 +39,7 @@ interface InitialData {
   meta?: { id: string; title: string; author: string };
   shoehorn?: string[];
   status?: string;
+  symmetry?: boolean;
 }
 
 interface Props {
@@ -61,6 +62,12 @@ export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props
   const { clues, getClue, updateClue, resetClues, loadCluesState } = useClues(initial?.clues);
   const { meta, setTitle, setAuthor, resetMeta } = useMeta(initial?.meta);
   const { shoehorn, addWord: addShoehorn, removeWord: removeShoehorn, resetShoehorn, loadShoehornState } = useShoehorn(initial?.shoehorn);
+  const [symmetry, setSymmetry] = useState(initial?.symmetry ?? true);
+
+  const handleToggleBlack = useCallback(
+    (row: number, col: number) => toggleBlack(row, col, symmetry),
+    [toggleBlack, symmetry]
+  );
 
   const slots = useMemo(() => getSlots(grid, numbers), [grid, numbers]);
   const { activeSlot, suggestions } = useAutofill(slots, cursor, direction, shoehorn);
@@ -74,7 +81,7 @@ export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props
     const doSave = async () => {
       setSaveStatus('saving');
       try {
-        await savePuzzle(puzzleId, { title: meta.title, author: meta.author, grid, clues, shoehorn });
+        await savePuzzle(puzzleId, { title: meta.title, author: meta.author, grid, clues, shoehorn, symmetry });
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus('idle'), 2000);
       } catch {
@@ -92,7 +99,7 @@ export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props
     triggerSave(false);
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [grid, clues, meta.title, meta.author, shoehorn]);
+  }, [grid, clues, meta.title, meta.author, shoehorn, symmetry]);
 
   // Helper tabs
   const [helperTab, setHelperTab] = useState<HelperTab>('suggestions');
@@ -138,7 +145,7 @@ export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props
     const { valid, errors } = validateCrossword(slots, getClue);
     if (!valid) { setModal({ mode: 'errors', errors }); return; }
     // Save immediately before publishing
-    await savePuzzle(puzzleId, { title: meta.title, author: meta.author, grid, clues, shoehorn });
+    await savePuzzle(puzzleId, { title: meta.title, author: meta.author, grid, clues, shoehorn, symmetry });
     const result = await publishPuzzle(puzzleId);
     if (!result.ok) { setModal({ mode: 'errors', errors: result.errors ?? ['Publish failed'] }); return; }
     setIsPublished(true);
@@ -232,6 +239,18 @@ export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props
           </select>
           <div className="w-px h-4 bg-gray-700" />
           <button
+            onClick={() => setSymmetry(false)}
+            disabled={!symmetry}
+            className={`px-2.5 py-0.5 rounded border transition-colors ${
+              symmetry
+                ? 'border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'
+                : 'border-gray-700 text-gray-600 cursor-not-allowed'
+            }`}
+          >
+            {symmetry ? 'Go Freestyle' : 'Freestyle'}
+          </button>
+          <div className="w-px h-4 bg-gray-700" />
+          <button
             onClick={() => setHelpOpen(true)}
             className="px-2.5 py-0.5 rounded border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition-colors"
           >
@@ -261,7 +280,7 @@ export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props
             direction={direction}
             setDirection={setDirection}
             numbers={numbers}
-            toggleBlack={toggleBlack}
+            toggleBlack={handleToggleBlack}
             setCell={setCell}
             advance={advance}
           />

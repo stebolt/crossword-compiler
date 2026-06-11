@@ -34,8 +34,8 @@ export function useGrid(initialGrid?: CellValue[][]) {
     try { localStorage.setItem(LS_KEY, JSON.stringify(g)); } catch {}
   }, []);
 
-  const toggleBlackCell = useCallback((row: number, col: number) => {
-    setGrid(toggleBlack(grid, row, col));
+  const toggleBlackCell = useCallback((row: number, col: number, symmetry = true) => {
+    setGrid(toggleBlack(grid, row, col, symmetry));
   }, [grid, setGrid]);
 
   const setCell = useCallback((row: number, col: number, value: CellValue) => {

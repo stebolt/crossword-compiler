@@ -30,7 +30,7 @@ export async function PATCH(
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { title, author, grid, clues, shoehorn } = body;
+  const { title, author, grid, clues, shoehorn, symmetry } = body;
 
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (title !== undefined) patch.title = title;
@@ -38,6 +38,7 @@ export async function PATCH(
   if (grid !== undefined) patch.grid = grid;
   if (clues !== undefined) patch.clues = clues;
   if (shoehorn !== undefined) patch.shoehorn = shoehorn;
+  if (symmetry !== undefined) patch.symmetry = symmetry;
 
   const { error } = await supabase
     .from('puzzles')
