@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
-type State = 'loading' | 'ready' | 'saving' | 'done' | 'error';
+type State = 'loading' | 'ready' | 'saving' | 'expired' | 'error';
 
 export default function SetPasswordPage() {
   const router = useRouter();
@@ -15,16 +15,27 @@ export default function SetPasswordPage() {
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
+    let settled = false;
+
+    const settle = (hasSession: boolean) => {
+      if (settled) return;
+      settled = true;
+      setState(hasSession ? 'ready' : 'expired');
+    };
+
     // createBrowserClient exchanges hash tokens asynchronously; wait for a session
     supabase.current.auth.getSession().then(({ data: { session } }) => {
-      if (session) { setState('ready'); return; }
+      if (session) settle(true);
     });
 
     const { data: { subscription } } = supabase.current.auth.onAuthStateChange((_event, session) => {
-      if (session) setState('ready');
+      if (session) settle(true);
     });
 
-    return () => subscription.unsubscribe();
+    // If no session arrives within 6s the token is expired or invalid
+    const timer = setTimeout(() => settle(false), 6000);
+
+    return () => { subscription.unsubscribe(); clearTimeout(timer); };
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -51,6 +62,13 @@ export default function SetPasswordPage() {
 
         {state === 'loading' && (
           <p className="text-sm text-gray-400">Verifying invite link…</p>
+        )}
+
+        {state === 'expired' && (
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-red-400">This invite link has expired or is invalid.</p>
+            <p className="text-sm text-gray-400">Ask your administrator to send a new invite, then click the link in that email.</p>
+          </div>
         )}
 
         {(state === 'ready' || state === 'saving') && (
