@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import type { Crossword, Clue, Direction } from "../../../shared/types";
 import { ClueList } from "./ClueList";
+import AppTabs from "./AppTabs";
 
 interface Props {
   crossword: Crossword;
@@ -343,27 +344,31 @@ export function CrosswordSolver({ crossword }: Props) {
           </div>
         </div>
       )}
-      <header className="border-b border-gray-700 bg-gray-900 px-4 sm:px-6 py-3 shrink-0">
+      <header className="bg-gray-900 dark:bg-gray-950 text-white px-5 py-2 flex items-center text-sm flex-shrink-0 relative">
         <div className="flex items-center gap-3">
           <Link href="/" className="text-xs font-medium tracking-tight text-gray-400 hover:text-white transition-colors uppercase shrink-0">
             ← Crosswords
           </Link>
           <div className="w-px h-4 bg-gray-700 shrink-0" />
-          <div className="flex-1 min-w-0">
-            <h1 className="text-base font-semibold text-gray-100 leading-tight truncate">{meta.title}</h1>
+          <div className="min-w-0">
+            <h1 className="text-sm font-semibold text-gray-100 leading-tight truncate">{meta.title}</h1>
             {(meta.author || meta.publishedAt) && (
               <p className="text-xs text-gray-500 leading-tight">
                 {meta.author && `By ${meta.author}`}{meta.author && meta.publishedAt ? ' · ' : ''}{meta.publishedAt ?? ''}
               </p>
             )}
           </div>
-          <div className="flex items-center gap-3 shrink-0">
-            {isComplete && (
-              <span className="text-sm font-medium text-green-400 bg-green-900/30 border border-green-700 px-3 py-1 rounded-full">
-                Complete!
-              </span>
-            )}
-            <div ref={helpRef} className="relative">
+        </div>
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <AppTabs />
+        </div>
+        <div className="ml-auto flex items-center gap-3">
+          {isComplete && (
+            <span className="text-sm font-medium text-green-400 bg-green-900/30 border border-green-700 px-3 py-1 rounded-full">
+              Complete!
+            </span>
+          )}
+          <div ref={helpRef} className="relative">
               <button
                 onClick={() => setHelpOpen(o => !o)}
                 className={`px-3 py-1.5 rounded-md border text-sm transition-colors flex items-center gap-1.5 ${
@@ -415,7 +420,6 @@ export function CrosswordSolver({ crossword }: Props) {
               )}
             </div>
           </div>
-        </div>
       </header>
 
       <main className="flex flex-col lg:flex-row gap-6 lg:gap-8 p-4 lg:p-6 lg:flex-1 max-w-5xl mx-auto w-full">
