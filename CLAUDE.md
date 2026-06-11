@@ -56,7 +56,8 @@ create table public.puzzles (
   shoehorn     jsonb not null default '[]',
   published_at timestamptz,
   created_at   timestamptz default now(),
-  updated_at   timestamptz default now()
+  updated_at   timestamptz default now(),
+  setter_name  text
 );
 
 alter table public.puzzles enable row level security;
@@ -72,7 +73,8 @@ Add users via Supabase dashboard → Authentication → Invite user. No public s
 
 ## Deployment
 
-- Production: https://crossword-compiler-solver.vercel.app/
+- **GitHub repo:** https://github.com/stebolt/crossword-compiler (public, `main` branch)
+- **Vercel:** auto-deploys from `main` → https://crossword-compiler-solver.vercel.app/
 
 ## Current Status
 
