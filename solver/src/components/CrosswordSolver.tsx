@@ -144,6 +144,8 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
   }, [grid, userGrid]);
 
   // Save progress to Supabase for authenticated users (debounced 2s)
+  // No cleanup return — intentionally let the timer fire even after unmount so
+  // navigating back to the list before 2s doesn't cancel the pending save.
   useEffect(() => {
     if (!userId || !isMountedRef.current) return;
     if (!isAnyFilled && !isComplete) return;
@@ -155,7 +157,7 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(async () => {
       const supabase = createSupabaseBrowserClient();
-      await supabase.from("puzzle_progress").upsert(
+      const { error } = await supabase.from("puzzle_progress").upsert(
         {
           user_id: userId,
           puzzle_id: meta.id,
@@ -168,11 +170,8 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
         },
         { onConflict: "user_id,puzzle_id" }
       );
+      if (error) console.error("Failed to save progress:", error);
     }, 2000);
-
-    return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    };
   }, [userId, userEmail, meta.id, userGrid, revealedCells, isComplete, isAnyFilled]);
 
   const filledAcrossClues = useMemo(() => {

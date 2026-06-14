@@ -33,8 +33,8 @@ Copy `.env.local.example` to `.env.local` and fill in Supabase credentials befor
 
 - TypeScript throughout — import shared types from `../shared/types.ts` (relative) or `../../../../shared/types` from deep in `solver/src/compiler/`
 - Tailwind CSS v4 — dark mode via `.dark` class on root (`@variant dark (&:where(.dark, .dark *))`)
-- Grid is always 15×15, black cells use `"#"`, symmetry is 180° rotational
-- Compiler state (grid, clues, meta, shoehorn) persisted to Supabase via `/api/puzzles/[id]` PATCH with 2s debounce; localStorage used as local cache
+- Grid is always 15×15, black cells use `"#"`, symmetry defaults to 180° rotational; setters can switch a puzzle to freestyle (one-way, per-puzzle) via the "Go Freestyle" button — stored as `symmetry boolean` on the puzzle row
+- Compiler state (grid, clues, meta, shoehorn, symmetry) persisted to Supabase via `/api/puzzles/[id]` PATCH with 2s debounce; localStorage used as local cache
 - Published crosswords read from Supabase (`status = 'published'`) — no static JSON files
 - Next.js 16 conventions: `params` is a Promise (always `await params`), `cookies()` is async, proxy.ts replaces middleware.ts
 - Browser Supabase client: `createSupabaseBrowserClient()` from `@/lib/supabase-browser`
@@ -54,6 +54,7 @@ create table public.puzzles (
   grid         jsonb not null default '[]',
   clues        jsonb not null default '{}',
   shoehorn     jsonb not null default '[]',
+  symmetry     boolean not null default true,
   published_at timestamptz,
   created_at   timestamptz default now(),
   updated_at   timestamptz default now(),
