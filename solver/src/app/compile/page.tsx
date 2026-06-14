@@ -11,5 +11,30 @@ export default async function CompilePage() {
     .eq('owner_id', user!.id)
     .order('updated_at', { ascending: false });
 
-  return <CompilerDashboard puzzles={puzzles ?? []} isAdmin={user!.email === 'tech@stebolt.ch'} userEmail={user!.email ?? ''} />;
+  const publishedIds = (puzzles ?? []).filter(p => p.status === 'published').map(p => p.id);
+  let solverProgress: SolverProgressRow[] = [];
+  if (publishedIds.length > 0) {
+    const { data: progress } = await supabase
+      .from('puzzle_progress')
+      .select('puzzle_id, user_email, status, started_at, completed_at')
+      .in('puzzle_id', publishedIds);
+    solverProgress = progress ?? [];
+  }
+
+  return (
+    <CompilerDashboard
+      puzzles={puzzles ?? []}
+      isAdmin={user!.email === 'tech@stebolt.ch'}
+      userEmail={user!.email ?? ''}
+      solverProgress={solverProgress}
+    />
+  );
+}
+
+export interface SolverProgressRow {
+  puzzle_id: string;
+  user_email: string | null;
+  status: string;
+  started_at: string | null;
+  completed_at: string | null;
 }

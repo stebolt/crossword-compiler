@@ -18,14 +18,28 @@ export default async function SolvePage({
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
 
   const supabase = await createServerClient();
-  const { data: puzzle } = await supabase
-    .from('puzzles')
-    .select('id, title, author, published_at, grid, clues')
-    .eq('id', id)
-    .eq('status', 'published')
-    .single();
+  const [{ data: { user } }, { data: puzzle }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from('puzzles')
+      .select('id, title, author, published_at, grid, clues')
+      .eq('id', id)
+      .eq('status', 'published')
+      .single(),
+  ]);
 
   if (!puzzle) notFound();
+
+  let initialProgress = null;
+  if (user) {
+    const { data: progress } = await supabase
+      .from('puzzle_progress')
+      .select('user_grid, revealed, status')
+      .eq('user_id', user.id)
+      .eq('puzzle_id', id)
+      .single();
+    if (progress) initialProgress = progress;
+  }
 
   const grid = puzzle.grid as CellValue[][];
   const cluesMap = (puzzle.clues ?? {}) as Record<string, ClueEntry>;
@@ -41,5 +55,12 @@ export default async function SolvePage({
   });
   crossword.meta.publishedAt = puzzle.published_at?.split('T')[0] ?? '';
 
-  return <CrosswordSolver crossword={crossword} />;
+  return (
+    <CrosswordSolver
+      crossword={crossword}
+      userId={user?.id}
+      userEmail={user?.email}
+      initialProgress={initialProgress}
+    />
+  );
 }

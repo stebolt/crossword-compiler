@@ -5,18 +5,30 @@ import Link from "next/link";
 import type { Crossword, Clue, Direction } from "../../../shared/types";
 import { ClueList } from "./ClueList";
 import AppTabs from "./AppTabs";
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+
+interface InitialProgress {
+  user_grid: string[][];
+  revealed: string[];
+  status: string;
+}
 
 interface Props {
   crossword: Crossword;
+  userId?: string;
+  userEmail?: string;
+  initialProgress?: InitialProgress | null;
 }
 
-export function CrosswordSolver({ crossword }: Props) {
+export function CrosswordSolver({ crossword, userId, userEmail, initialProgress }: Props) {
   const { meta, grid, clues } = crossword;
 
   const [userGrid, setUserGrid] = useState<string[][]>(() =>
-    Array.from({ length: 15 }, () => Array(15).fill(""))
+    initialProgress?.user_grid ?? Array.from({ length: 15 }, () => Array(15).fill(""))
   );
-  const [revealedCells, setRevealedCells] = useState<Set<string>>(new Set);
+  const [revealedCells, setRevealedCells] = useState<Set<string>>(() =>
+    new Set(initialProgress?.revealed ?? [])
+  );
   const [activeCell, setActiveCell] = useState<{ row: number; col: number } | null>(null);
   const [direction, setDirection] = useState<Direction>("across");
   const [checkMode, setCheckMode] = useState<"off" | "word" | "grid">("off");
@@ -26,6 +38,11 @@ export function CrosswordSolver({ crossword }: Props) {
   const helpRef = useRef<HTMLDivElement>(null);
 
   const gridRef = useRef<HTMLDivElement>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const completedAtRef = useRef<string | null>(
+    initialProgress?.status === "complete" ? new Date().toISOString() : null
+  );
+  const isMountedRef = useRef(false);
 
   // Sync mobile clue tab with active direction
   useEffect(() => {
@@ -41,15 +58,20 @@ export function CrosswordSolver({ crossword }: Props) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [helpOpen]);
 
-  // Load persisted progress after mount to avoid hydration mismatch
+  // Load from localStorage (anon users, or as fallback before DB data arrives)
   useEffect(() => {
+    if (initialProgress) {
+      isMountedRef.current = true;
+      return;
+    }
     try {
       const savedGrid = localStorage.getItem(`xw-progress-${meta.id}`);
       if (savedGrid) setUserGrid(JSON.parse(savedGrid));
       const savedRevealed = localStorage.getItem(`xw-revealed-${meta.id}`);
       if (savedRevealed) setRevealedCells(new Set(JSON.parse(savedRevealed)));
     } catch {}
-  }, [meta.id]);
+    isMountedRef.current = true;
+  }, [meta.id, initialProgress]);
 
   useEffect(() => {
     try {
@@ -113,6 +135,45 @@ export function CrosswordSolver({ crossword }: Props) {
     }
     return true;
   }, [grid, userGrid]);
+
+  const isAnyFilled = useMemo(() => {
+    for (let r = 0; r < 15; r++)
+      for (let c = 0; c < 15; c++)
+        if (grid[r][c] !== "#" && userGrid[r][c] !== "") return true;
+    return false;
+  }, [grid, userGrid]);
+
+  // Save progress to Supabase for authenticated users (debounced 2s)
+  useEffect(() => {
+    if (!userId || !isMountedRef.current) return;
+    if (!isAnyFilled && !isComplete) return;
+
+    if (isComplete && !completedAtRef.current) {
+      completedAtRef.current = new Date().toISOString();
+    }
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(async () => {
+      const supabase = createSupabaseBrowserClient();
+      await supabase.from("puzzle_progress").upsert(
+        {
+          user_id: userId,
+          puzzle_id: meta.id,
+          user_email: userEmail ?? null,
+          status: isComplete ? "complete" : "in_progress",
+          user_grid: userGrid,
+          revealed: [...revealedCells],
+          updated_at: new Date().toISOString(),
+          completed_at: completedAtRef.current ?? null,
+        },
+        { onConflict: "user_id,puzzle_id" }
+      );
+    }, 2000);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [userId, userEmail, meta.id, userGrid, revealedCells, isComplete, isAnyFilled]);
 
   const filledAcrossClues = useMemo(() => {
     const filled = new Set<number>();
@@ -363,11 +424,15 @@ export function CrosswordSolver({ crossword }: Props) {
           <AppTabs />
         </div>
         <div className="ml-auto flex items-center gap-3">
-          {isComplete && (
+          {isComplete ? (
             <span className="text-sm font-medium text-green-400 bg-green-900/30 border border-green-700 px-3 py-1 rounded-full">
               Complete!
             </span>
-          )}
+          ) : userId && isAnyFilled ? (
+            <span className="text-xs font-medium text-amber-400 bg-amber-900/20 border border-amber-700 px-2.5 py-1 rounded-full">
+              In progress
+            </span>
+          ) : null}
           <div ref={helpRef} className="relative">
               <button
                 onClick={() => setHelpOpen(o => !o)}

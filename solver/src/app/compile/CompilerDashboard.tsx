@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AppTabs from '@/components/AppTabs';
+import type { SolverProgressRow } from './page';
 
 interface Puzzle {
   id: string;
@@ -18,9 +19,10 @@ interface Props {
   puzzles: Puzzle[];
   isAdmin?: boolean;
   userEmail?: string;
+  solverProgress?: SolverProgressRow[];
 }
 
-export default function CompilerDashboard({ puzzles: initial, isAdmin, userEmail }: Props) {
+export default function CompilerDashboard({ puzzles: initial, isAdmin, userEmail, solverProgress = [] }: Props) {
   const router = useRouter();
   const [puzzles, setPuzzles] = useState<Puzzle[]>(initial);
   const [creating, setCreating] = useState(false);
@@ -88,6 +90,15 @@ export default function CompilerDashboard({ puzzles: initial, isAdmin, userEmail
   function fmt(iso: string) {
     return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
   }
+
+  function fmtTime(iso: string) {
+    return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  const progressByPuzzle = solverProgress.reduce<Record<string, SolverProgressRow[]>>((acc, row) => {
+    (acc[row.puzzle_id] ??= []).push(row);
+    return acc;
+  }, {});
 
   return (
     <div className={`min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col${darkMode ? ' dark' : ''}`}>
@@ -185,6 +196,26 @@ export default function CompilerDashboard({ puzzles: initial, isAdmin, userEmail
                     Last saved {fmt(p.updated_at)}
                     {p.published_at && ` · Published ${fmt(p.published_at)}`}
                   </p>
+                  {p.status === 'published' && progressByPuzzle[p.id]?.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {progressByPuzzle[p.id].map((row, i) => (
+                        <div key={i} className="flex items-center gap-2 text-xs">
+                          <span className="text-gray-400 dark:text-gray-400 truncate max-w-[200px]">
+                            {row.user_email ?? 'Anonymous'}
+                          </span>
+                          {row.status === 'complete' ? (
+                            <span className="text-green-500 dark:text-green-400 font-medium">
+                              Complete{row.completed_at ? ` · ${fmtTime(row.completed_at)}` : ''}
+                            </span>
+                          ) : (
+                            <span className="text-amber-500 dark:text-amber-400 font-medium">
+                              In progress{row.started_at ? ` · started ${fmtTime(row.started_at)}` : ''}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <button
