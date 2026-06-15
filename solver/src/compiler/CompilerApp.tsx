@@ -36,7 +36,7 @@ const HELPER_TABS: { id: HelperTab; label: string }[] = [
 interface InitialData {
   grid?: CellValue[][];
   clues?: Record<string, ClueEntry>;
-  meta?: { id: string; title: string; author: string };
+  meta?: { id: string; title: string; author: string; instructions: string };
   shoehorn?: string[];
   status?: string;
   symmetry?: boolean;
@@ -60,7 +60,7 @@ export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props
   } = useGrid(initial?.grid);
 
   const { clues, getClue, updateClue, resetClues, loadCluesState } = useClues(initial?.clues);
-  const { meta, setTitle, setAuthor, resetMeta } = useMeta(initial?.meta);
+  const { meta, setTitle, setAuthor, setInstructions, resetMeta } = useMeta(initial?.meta);
   const { shoehorn, addWord: addShoehorn, removeWord: removeShoehorn, resetShoehorn, loadShoehornState } = useShoehorn(initial?.shoehorn);
   const [symmetry, setSymmetry] = useState(initial?.symmetry ?? true);
 
@@ -81,7 +81,7 @@ export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props
     const doSave = async () => {
       setSaveStatus('saving');
       try {
-        await savePuzzle(puzzleId, { title: meta.title, author: meta.author, grid, clues, shoehorn, symmetry });
+        await savePuzzle(puzzleId, { title: meta.title, author: meta.author, instructions: meta.instructions, grid, clues, shoehorn, symmetry });
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus('idle'), 2000);
       } catch {
@@ -93,13 +93,13 @@ export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props
     } else {
       saveTimerRef.current = setTimeout(doSave, 2000);
     }
-  }, [puzzleId, meta.title, meta.author, grid, clues, shoehorn]);
+  }, [puzzleId, meta.title, meta.author, meta.instructions, grid, clues, shoehorn]);
 
   useEffect(() => {
     triggerSave(false);
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [grid, clues, meta.title, meta.author, shoehorn, symmetry]);
+  }, [grid, clues, meta.title, meta.author, meta.instructions, shoehorn, symmetry]);
 
   // Helper tabs
   const [helperTab, setHelperTab] = useState<HelperTab>('suggestions');
@@ -145,7 +145,7 @@ export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props
     const { valid, errors } = validateCrossword(slots, getClue);
     if (!valid) { setModal({ mode: 'errors', errors }); return; }
     // Save immediately before publishing
-    await savePuzzle(puzzleId, { title: meta.title, author: meta.author, grid, clues, shoehorn, symmetry });
+    await savePuzzle(puzzleId, { title: meta.title, author: meta.author, instructions: meta.instructions, grid, clues, shoehorn, symmetry });
     const result = await publishPuzzle(puzzleId);
     if (!result.ok) { setModal({ mode: 'errors', errors: result.errors ?? ['Publish failed'] }); return; }
     setIsPublished(true);
@@ -288,6 +288,14 @@ export function CompilerApp({ puzzleId, initial, darkMode, onToggleDark }: Props
             <span className="font-medium text-blue-500 dark:text-blue-400">{dirLabel}</span>
             {cursorNum != null && <span>· {cursorNum}{direction === 'across' ? 'A' : 'D'}</span>}
           </div>
+
+          <input
+            value={meta.instructions}
+            onChange={e => setInstructions(e.target.value)}
+            className="w-[544px] text-xs text-gray-600 dark:text-gray-400 bg-transparent border border-gray-200 dark:border-gray-700 rounded px-2 py-1 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:border-gray-400 dark:focus:border-gray-500"
+            placeholder="Special instructions for solvers… (optional)"
+            aria-label="Solver instructions"
+          />
 
           <div className="w-[544px] flex-1 flex flex-col min-h-0 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 overflow-hidden">
             <div className="flex border-b border-gray-100 dark:border-gray-700 shrink-0">

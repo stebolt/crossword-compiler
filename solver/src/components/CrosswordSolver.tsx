@@ -552,6 +552,9 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
               </div>
             ))}
           </div>
+          {meta.instructions && (
+            <p className="text-xs text-gray-400 italic mt-2 text-center max-w-[540px]">{meta.instructions}</p>
+          )}
         </div>
 
         {/* Mobile: active clue panel */}

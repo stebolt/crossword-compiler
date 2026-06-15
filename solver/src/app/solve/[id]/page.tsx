@@ -22,7 +22,7 @@ export default async function SolvePage({
     supabase.auth.getUser(),
     supabase
       .from('puzzles')
-      .select('id, title, author, published_at, grid, clues')
+      .select('id, title, author, instructions, published_at, grid, clues')
       .eq('id', id)
       .eq('status', 'published')
       .single(),
@@ -52,6 +52,7 @@ export default async function SolvePage({
     id: puzzle.id,
     title: puzzle.title,
     author: puzzle.author,
+    instructions: puzzle.instructions ?? '',
   });
   crossword.meta.publishedAt = puzzle.published_at?.split('T')[0] ?? '';
 

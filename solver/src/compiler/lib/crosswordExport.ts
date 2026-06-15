@@ -6,6 +6,7 @@ interface Meta {
   id: string;
   title: string;
   author: string;
+  instructions?: string;
 }
 
 function buildContinuationMap(
@@ -100,6 +101,7 @@ export function buildCrossword(
       author: meta.author,
       publishedAt: new Date().toISOString().split('T')[0],
       size: 15,
+      ...(meta.instructions && { instructions: meta.instructions }),
     },
     grid,
     clues: { across, down },

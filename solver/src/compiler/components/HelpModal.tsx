@@ -38,6 +38,10 @@ const sections = [
     body: 'The Wordplay tab gives quick-reference lists of anagram indicators, containment indicators, abbreviations, and other cryptic crossword devices.',
   },
   {
+    heading: 'Solver instructions',
+    body: 'Below the grid you\'ll find an "Instructions for solvers" field. Type anything here — a preamble, a thematic note, or special solving rules — and it will appear in italic under the grid when solvers open the puzzle. Leave it blank and nothing is shown.',
+  },
+  {
     heading: 'Publishing',
     body: 'Click Publish in the header when your puzzle is ready. The compiler checks that every cell is filled and every clue is confirmed — any gaps are listed so you can fix them. Once published, the puzzle appears immediately on the public solver for anyone to solve.',
   },

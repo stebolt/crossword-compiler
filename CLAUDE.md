@@ -55,6 +55,7 @@ create table public.puzzles (
   clues        jsonb not null default '{}',
   shoehorn     jsonb not null default '[]',
   symmetry     boolean not null default true,
+  instructions text not null default '',
   published_at timestamptz,
   created_at   timestamptz default now(),
   updated_at   timestamptz default now(),

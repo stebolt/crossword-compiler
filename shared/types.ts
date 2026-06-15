@@ -6,6 +6,7 @@ export interface CrosswordMeta {
   author: string;
   publishedAt: string; // ISO date string
   size: number; // always 15
+  instructions?: string;
 }
 
 export interface Clue {

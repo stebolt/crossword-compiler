@@ -10,7 +10,7 @@ interface Props {
   initial: {
     grid?: CellValue[][];
     clues?: Record<string, ClueEntry>;
-    meta?: { id: string; title: string; author: string };
+    meta?: { id: string; title: string; author: string; instructions: string };
     shoehorn?: string[];
     status?: string;
     symmetry?: boolean;

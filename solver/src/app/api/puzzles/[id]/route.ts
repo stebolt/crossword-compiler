@@ -30,11 +30,12 @@ export async function PATCH(
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { title, author, grid, clues, shoehorn, symmetry } = body;
+  const { title, author, instructions, grid, clues, shoehorn, symmetry } = body;
 
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (title !== undefined) patch.title = title;
   if (author !== undefined) patch.author = author;
+  if (instructions !== undefined) patch.instructions = instructions;
   if (grid !== undefined) patch.grid = grid;
   if (clues !== undefined) patch.clues = clues;
   if (shoehorn !== undefined) patch.shoehorn = shoehorn;

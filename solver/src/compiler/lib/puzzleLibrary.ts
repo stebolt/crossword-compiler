@@ -21,7 +21,7 @@ export async function loadLibrary(): Promise<LibraryEntry[]> {
 
 export async function savePuzzle(
   id: string,
-  data: { title: string; author: string; grid: CellValue[][]; clues: Record<string, ClueEntry>; shoehorn: string[]; symmetry: boolean }
+  data: { title: string; author: string; instructions: string; grid: CellValue[][]; clues: Record<string, ClueEntry>; shoehorn: string[]; symmetry: boolean }
 ): Promise<void> {
   await fetch(`/api/puzzles/${id}`, {
     method: 'PATCH',

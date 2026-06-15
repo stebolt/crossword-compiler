@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 
-interface Meta { id: string; title: string; author: string; }
+interface Meta { id: string; title: string; author: string; instructions: string; }
 
 const LS_KEY = 'cxc-meta-v1';
 
@@ -12,7 +12,7 @@ function loadMeta(initial?: Meta): Meta {
     const raw = localStorage.getItem(LS_KEY);
     if (raw) return JSON.parse(raw) as Meta;
   } catch { /* ignore */ }
-  return { id: crypto.randomUUID(), title: '', author: '' };
+  return { id: crypto.randomUUID(), title: '', author: '', instructions: '' };
 }
 
 export function useMeta(initialMeta?: Meta) {
@@ -31,9 +31,13 @@ export function useMeta(initialMeta?: Meta) {
     persistMeta({ ...meta, author });
   }, [meta, persistMeta]);
 
+  const setInstructions = useCallback((instructions: string) => {
+    persistMeta({ ...meta, instructions });
+  }, [meta, persistMeta]);
+
   const resetMeta = useCallback((m: Meta) => {
     persistMeta(m);
   }, [persistMeta]);
 
-  return { meta, setTitle, setAuthor, resetMeta };
+  return { meta, setTitle, setAuthor, setInstructions, resetMeta };
 }
