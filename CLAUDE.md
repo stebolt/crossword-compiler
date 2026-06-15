@@ -68,6 +68,34 @@ create policy "owner_all" on public.puzzles
 
 create policy "published_read" on public.puzzles
   for select using (status = 'published');
+
+create table public.puzzle_progress (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid references auth.users(id) on delete cascade not null,
+  puzzle_id    uuid references public.puzzles(id) on delete cascade not null,
+  user_email   text,
+  status       text not null default 'in_progress',
+  user_grid    jsonb,
+  revealed     jsonb,
+  started_at   timestamptz default now(),
+  updated_at   timestamptz default now(),
+  completed_at timestamptz,
+  unique (user_id, puzzle_id)
+);
+
+alter table public.puzzle_progress enable row level security;
+
+-- solvers own their rows; puzzle owners can read progress for their puzzles
+create policy "solver_own" on public.puzzle_progress
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "owner_read_progress" on public.puzzle_progress
+  for select using (
+    exists (select 1 from public.puzzles where puzzles.id = puzzle_progress.puzzle_id and puzzles.owner_id = auth.uid())
+  );
+
+-- required: raw SQL CREATE TABLE doesn't auto-grant data privileges like the dashboard does
+grant select, insert, update, delete on table public.puzzle_progress to authenticated, anon, service_role;
 ```
 
 Add users via Supabase dashboard → Authentication → Invite user. No public sign-up.
