@@ -38,11 +38,18 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
   const helpRef = useRef<HTMLDivElement>(null);
 
   const gridRef = useRef<HTMLDivElement>(null);
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
+  const activeCellRef = useRef(activeCell);
+  const directionRef = useRef(direction);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const completedAtRef = useRef<string | null>(
     initialProgress?.status === "complete" ? new Date().toISOString() : null
   );
   const isMountedRef = useRef(false);
+
+  // Keep refs in sync so mobile input handler doesn't capture stale closures
+  useEffect(() => { activeCellRef.current = activeCell; }, [activeCell]);
+  useEffect(() => { directionRef.current = direction; }, [direction]);
 
   // Sync mobile clue tab with active direction
   useEffect(() => {
@@ -219,7 +226,7 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
   const handleCellClick = useCallback(
     (row: number, col: number) => {
       if (grid[row][col] === "#") return;
-      gridRef.current?.focus();
+      hiddenInputRef.current?.focus();
 
       setCheckMode("off");
 
@@ -243,7 +250,7 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
 
   const handleClueClick = useCallback(
     (clue: Clue, dir: Direction) => {
-      gridRef.current?.focus();
+      hiddenInputRef.current?.focus();
       setDirection(dir);
       for (let i = 0; i < clue.length; i++) {
         const r = dir === "across" ? clue.row : clue.row + i;
@@ -322,6 +329,28 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
     [activeCell, direction, userGrid, clues, activeClue, nextCell, prevCell]
   );
 
+  const handleMobileInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.currentTarget.value;
+      e.currentTarget.value = "";
+      if (!value) return;
+      const cell = activeCellRef.current;
+      const dir = directionRef.current;
+      if (!cell) return;
+      const letter = value.slice(-1).toUpperCase();
+      if (/[A-Z]/.test(letter)) {
+        setUserGrid((prev) => {
+          const next = prev.map((r) => [...r]);
+          next[cell.row][cell.col] = letter;
+          return next;
+        });
+        const next = nextCell(cell.row, cell.col, dir);
+        if (next) setActiveCell(next);
+      }
+    },
+    [nextCell]
+  );
+
   const clearGrid = useCallback(() => {
     setUserGrid(Array.from({ length: 15 }, () => Array(15).fill("")));
     setRevealedCells(new Set());
@@ -375,6 +404,28 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">
+      {/* Hidden input captures mobile keyboard input when a cell is active */}
+      <input
+        ref={hiddenInputRef}
+        type="text"
+        inputMode="text"
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="characters"
+        spellCheck={false}
+        onKeyDown={handleKeyDown}
+        onChange={handleMobileInput}
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          opacity: 0,
+          pointerEvents: "none",
+          left: "-9999px",
+          top: "-9999px",
+          width: "1px",
+          height: "1px",
+        }}
+      />
       {pendingConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setPendingConfirm(null)}>
           <div className="bg-gray-800 rounded-lg shadow-xl p-5 w-72 border border-gray-700" onClick={e => e.stopPropagation()}>
