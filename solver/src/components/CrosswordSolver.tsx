@@ -38,8 +38,10 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
   const helpRef = useRef<HTMLDivElement>(null);
 
   const gridRef = useRef<HTMLDivElement>(null);
-  const hiddenInputRef = useRef<HTMLInputElement>(null);
-  const activeCellRef = useRef(activeCell);
+  // Per-cell input refs — user taps directly on a real <input>, so iOS always shows keyboard
+  const cellRefs = useRef<(HTMLInputElement | null)[][]>(
+    Array.from({ length: 15 }, () => Array(15).fill(null))
+  );
   const directionRef = useRef(direction);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const completedAtRef = useRef<string | null>(
@@ -47,8 +49,6 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
   );
   const isMountedRef = useRef(false);
 
-  // Keep refs in sync so mobile input handler doesn't capture stale closures
-  useEffect(() => { activeCellRef.current = activeCell; }, [activeCell]);
   useEffect(() => { directionRef.current = direction; }, [direction]);
 
   // Sync mobile clue tab with active direction
@@ -225,19 +225,12 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
 
   const handleCellClick = useCallback(
     (row: number, col: number) => {
-      if (grid[row][col] === "#") return;
-      gridRef.current?.focus();       // desktop: captures keyboard via onKeyDown
-      hiddenInputRef.current?.focus(); // mobile: focuses visible input → shows keyboard
-
       setCheckMode("off");
-
       if (activeCell?.row === row && activeCell?.col === col) {
         setDirection((d) => (d === "across" ? "down" : "across"));
         return;
       }
-
       setActiveCell({ row, col });
-
       const list = direction === "across" ? clues.across : clues.down;
       const covered = list.some((c) =>
         direction === "across"
@@ -246,42 +239,47 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
       );
       if (!covered) setDirection((d) => (d === "across" ? "down" : "across"));
     },
-    [activeCell, direction, clues, grid]
+    [activeCell, direction, clues]
   );
 
   const handleClueClick = useCallback(
     (clue: Clue, dir: Direction) => {
-      gridRef.current?.focus();
-      hiddenInputRef.current?.focus();
       setDirection(dir);
+      let targetRow = clue.row, targetCol = clue.col;
       for (let i = 0; i < clue.length; i++) {
         const r = dir === "across" ? clue.row : clue.row + i;
         const c = dir === "across" ? clue.col + i : clue.col;
-        if (userGrid[r][c] === "") {
-          setActiveCell({ row: r, col: c });
-          return;
-        }
+        if (userGrid[r][c] === "") { targetRow = r; targetCol = c; break; }
       }
-      setActiveCell({ row: clue.row, col: clue.col });
+      setActiveCell({ row: targetRow, col: targetCol });
+      cellRefs.current[targetRow]?.[targetCol]?.focus();
     },
     [userGrid]
   );
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (!activeCell) return;
-      const { row, col } = activeCell;
-
-      if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) {
-        e.preventDefault();
+  const handleCellChange = useCallback(
+    (row: number, col: number, e: React.ChangeEvent<HTMLInputElement>) => {
+      const letter = e.target.value.toUpperCase().slice(-1);
+      if (/[A-Z]/.test(letter)) {
         setUserGrid((prev) => {
           const next = prev.map((r) => [...r]);
-          next[row][col] = e.key.toUpperCase();
+          next[row][col] = letter;
           return next;
         });
-        const next = nextCell(row, col, direction);
-        if (next) setActiveCell(next);
-      } else if (e.key === "Backspace" || e.key === "Delete") {
+        const next = nextCell(row, col, directionRef.current);
+        if (next) {
+          setActiveCell(next);
+          cellRefs.current[next.row]?.[next.col]?.focus();
+        }
+      }
+    },
+    [nextCell]
+  );
+
+  const handleCellKeyDown = useCallback(
+    (row: number, col: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+      const dir = directionRef.current;
+      if (e.key === "Backspace" || e.key === "Delete") {
         e.preventDefault();
         if (userGrid[row][col] !== "") {
           setUserGrid((prev) => {
@@ -290,67 +288,49 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
             return next;
           });
         } else {
-          const prev = prevCell(row, col, direction);
+          const prev = prevCell(row, col, dir);
           if (prev) {
-            setActiveCell(prev);
             setUserGrid((g) => {
               const next = g.map((r) => [...r]);
               next[prev.row][prev.col] = "";
               return next;
             });
+            setActiveCell(prev);
+            cellRefs.current[prev.row]?.[prev.col]?.focus();
           }
         }
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        if (direction !== "across") { setDirection("across"); return; }
+        if (dir !== "across") { setDirection("across"); return; }
         const n = nextCell(row, col, "across");
-        if (n) setActiveCell(n);
+        if (n) { setActiveCell(n); cellRefs.current[n.row]?.[n.col]?.focus(); }
       } else if (e.key === "ArrowLeft") {
         e.preventDefault();
-        if (direction !== "across") { setDirection("across"); return; }
+        if (dir !== "across") { setDirection("across"); return; }
         const p = prevCell(row, col, "across");
-        if (p) setActiveCell(p);
+        if (p) { setActiveCell(p); cellRefs.current[p.row]?.[p.col]?.focus(); }
       } else if (e.key === "ArrowDown") {
         e.preventDefault();
-        if (direction !== "down") { setDirection("down"); return; }
+        if (dir !== "down") { setDirection("down"); return; }
         const n = nextCell(row, col, "down");
-        if (n) setActiveCell(n);
+        if (n) { setActiveCell(n); cellRefs.current[n.row]?.[n.col]?.focus(); }
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        if (direction !== "down") { setDirection("down"); return; }
+        if (dir !== "down") { setDirection("down"); return; }
         const p = prevCell(row, col, "down");
-        if (p) setActiveCell(p);
+        if (p) { setActiveCell(p); cellRefs.current[p.row]?.[p.col]?.focus(); }
       } else if (e.key === "Tab") {
         e.preventDefault();
-        const list = direction === "across" ? clues.across : clues.down;
+        const list = dir === "across" ? clues.across : clues.down;
         const idx = activeClue ? list.findIndex((c) => c.number === activeClue.number) : -1;
         const next = e.shiftKey ? list[idx - 1] : list[idx + 1];
-        if (next) setActiveCell({ row: next.row, col: next.col });
+        if (next) {
+          setActiveCell({ row: next.row, col: next.col });
+          cellRefs.current[next.row]?.[next.col]?.focus();
+        }
       }
     },
-    [activeCell, direction, userGrid, clues, activeClue, nextCell, prevCell]
-  );
-
-  const handleMobileInput = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.currentTarget.value;
-      e.currentTarget.value = "";
-      if (!value) return;
-      const cell = activeCellRef.current;
-      const dir = directionRef.current;
-      if (!cell) return;
-      const letter = value.slice(-1).toUpperCase();
-      if (/[A-Z]/.test(letter)) {
-        setUserGrid((prev) => {
-          const next = prev.map((r) => [...r]);
-          next[cell.row][cell.col] = letter;
-          return next;
-        });
-        const next = nextCell(cell.row, cell.col, dir);
-        if (next) setActiveCell(next);
-      }
-    },
-    [nextCell]
+    [userGrid, prevCell, nextCell, clues, activeClue]
   );
 
   const clearGrid = useCallback(() => {
@@ -521,9 +501,7 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
         {/* Grid */}
         <div
           ref={gridRef}
-          tabIndex={0}
-          onKeyDown={handleKeyDown}
-          className="outline-none shrink-0 self-start mx-auto lg:mx-0"
+          className="shrink-0 self-start mx-auto lg:mx-0"
         >
           <div className="border-2 border-gray-400 inline-block">
             {grid.map((row, r) => (
@@ -550,41 +528,46 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
                   else if (isRevealed) bg = "bg-amber-200";
                   else if (isHighlighted) bg = "bg-blue-100";
 
-                  const cellClass = `w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9 relative border border-gray-400 flex items-center justify-center select-none ${bg}`;
+                  const cellClass = `w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9 relative border border-gray-400 select-none ${bg}`;
 
                   if (isBlack) {
                     return <div key={c} className={cellClass} />;
                   }
 
-                  // Use <button> so iOS Safari treats the click as a trusted
-                  // activation event and shows the virtual keyboard.
+                  // Each white cell is a real <input> — tapping it directly opens
+                  // the iOS keyboard without any programmatic focus() tricks.
                   return (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => handleCellClick(r, c)}
-                      className={`${cellClass} cursor-pointer p-0 focus:outline-none`}
-                    >
+                    <div key={c} className={cellClass}>
                       {number !== undefined && (
-                        <span className="absolute top-0 left-0.5 text-[6px] sm:text-[7px] lg:text-[8px] leading-none font-medium text-gray-500">
+                        <span className="absolute top-0 left-0.5 text-[6px] sm:text-[7px] lg:text-[8px] leading-none font-medium text-gray-500 pointer-events-none z-10">
                           {number}
                         </span>
                       )}
-                      {letter && (
-                        <span
-                          className={`text-[9px] sm:text-[12px] lg:text-[15px] font-bold leading-none ${
-                            isActive ? "text-white" : "text-gray-900"
-                          }`}
-                        >
-                          {letter}
-                        </span>
-                      )}
+                      <input
+                        ref={(el) => { cellRefs.current[r][c] = el; }}
+                        type="text"
+                        inputMode="text"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="characters"
+                        spellCheck={false}
+                        tabIndex={-1}
+                        value={userGrid[r][c]}
+                        onPointerDown={() => handleCellClick(r, c)}
+                        onFocus={() => setActiveCell({ row: r, col: c })}
+                        onChange={(e) => handleCellChange(r, c, e)}
+                        onKeyDown={(e) => handleCellKeyDown(r, c, e)}
+                        className={`absolute inset-0 w-full h-full bg-transparent text-center font-bold focus:outline-none cursor-pointer z-0 ${
+                          isActive ? "text-white" : "text-gray-900"
+                        }`}
+                        style={{ fontSize: "16px", caretColor: "transparent" }}
+                      />
                       {isWrong && (
-                        <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 10 10" preserveAspectRatio="none">
+                        <svg className="absolute inset-0 w-full h-full pointer-events-none z-20" viewBox="0 0 10 10" preserveAspectRatio="none">
                           <line x1="1.5" y1="8.5" x2="8.5" y2="1.5" stroke="rgb(239,68,68)" strokeWidth="1.2" strokeLinecap="round" />
                         </svg>
                       )}
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -613,24 +596,6 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
           ) : (
             <p className="text-sm text-gray-500">Select a cell to see the clue.</p>
           )}
-          {/* Always-rendered input so ref is valid before first cell tap.
-              Visible so iOS has no reason to suppress keyboard on focus. */}
-          <input
-            ref={hiddenInputRef}
-            type="text"
-            inputMode="text"
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="characters"
-            spellCheck={false}
-            placeholder={activeCell ? "Type here…" : "Select a cell above"}
-            onKeyDown={handleKeyDown}
-            onChange={handleMobileInput}
-            className={`mt-2 w-full px-3 py-2 rounded border text-sm text-gray-100 placeholder-gray-500 bg-gray-700 focus:outline-none transition-colors ${
-              activeCell ? "border-gray-500 focus:border-blue-500" : "border-gray-700 opacity-40 pointer-events-none"
-            }`}
-            style={{ fontSize: "16px" }}
-          />
         </div>
 
         {/* Mobile: tabbed clue lists */}
