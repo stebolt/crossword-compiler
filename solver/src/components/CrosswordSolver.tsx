@@ -405,8 +405,14 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">
       {/* Hidden input captures mobile keyboard input when a cell is active */}
+      {/*
+        Hidden input — must be within the viewport (iOS Safari won't show the
+        keyboard for off-screen elements). font-size:16px prevents iOS zoom.
+        tabIndex={-1} keeps it out of the tab order.
+      */}
       <input
         ref={hiddenInputRef}
+        tabIndex={-1}
         type="text"
         inputMode="text"
         autoComplete="off"
@@ -418,12 +424,15 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
         aria-hidden="true"
         style={{
           position: "fixed",
-          opacity: 0,
-          pointerEvents: "none",
-          left: "-9999px",
-          top: "-9999px",
+          top: 0,
+          left: 0,
           width: "1px",
           height: "1px",
+          opacity: 0,
+          fontSize: "16px",
+          border: "none",
+          padding: 0,
+          outline: "none",
         }}
       />
       {pendingConfirm && (
