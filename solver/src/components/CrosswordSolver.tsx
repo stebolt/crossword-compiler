@@ -528,7 +528,7 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
                   else if (isRevealed) bg = "bg-amber-200";
                   else if (isHighlighted) bg = "bg-blue-100";
 
-                  const cellClass = `w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9 relative border border-gray-400 select-none ${bg}`;
+                  const cellClass = `w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9 relative border border-gray-400 ${bg}`;
 
                   if (isBlack) {
                     return <div key={c} className={cellClass} />;
@@ -566,7 +566,7 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
                         className={`absolute inset-0 w-full h-full bg-transparent text-center font-bold focus:outline-none cursor-pointer z-0 ${
                           isActive ? "text-white" : "text-gray-900"
                         }`}
-                        style={{ fontSize: "16px", caretColor: "transparent" }}
+                        style={{ fontSize: "16px", caretColor: "transparent", WebkitUserSelect: "text", userSelect: "text" }}
                       />
                       {isWrong && (
                         <svg className="absolute inset-0 w-full h-full pointer-events-none z-20" viewBox="0 0 10 10" preserveAspectRatio="none">
