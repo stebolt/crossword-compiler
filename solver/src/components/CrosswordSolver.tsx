@@ -551,10 +551,16 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
                         autoCorrect="off"
                         autoCapitalize="characters"
                         spellCheck={false}
-                        tabIndex={-1}
                         value={userGrid[r][c]}
-                        onPointerDown={() => handleCellClick(r, c)}
-                        onFocus={() => setActiveCell({ row: r, col: c })}
+                        onFocus={() => handleCellClick(r, c)}
+                        onClick={() => {
+                          // onFocus already ran handleCellClick for a new cell.
+                          // onClick fires even when already focused, so use it
+                          // only for the same-cell direction toggle.
+                          if (activeCell?.row === r && activeCell?.col === c) {
+                            setDirection((d) => (d === "across" ? "down" : "across"));
+                          }
+                        }}
                         onChange={(e) => handleCellChange(r, c, e)}
                         onKeyDown={(e) => handleCellKeyDown(r, c, e)}
                         className={`absolute inset-0 w-full h-full bg-transparent text-center font-bold focus:outline-none cursor-pointer z-0 ${

@@ -20,7 +20,11 @@ export function ClueList({ direction, clues, activeClue, filledClues, onClueClic
   const activeRef = useRef<HTMLLIElement>(null);
 
   useEffect(() => {
-    activeRef.current?.scrollIntoView({ block: "nearest" });
+    if (!activeRef.current) return;
+    // Skip scroll when an input is focused — on iOS, scrolling while the
+    // keyboard is appearing dismisses it.
+    if (document.activeElement?.tagName === "INPUT") return;
+    activeRef.current.scrollIntoView({ block: "nearest" });
   }, [activeClue]);
 
   return (
