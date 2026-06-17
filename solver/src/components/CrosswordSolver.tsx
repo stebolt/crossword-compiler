@@ -582,6 +582,7 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
                   return (
                     <div
                       key={c}
+                      onTouchEnd={(e) => { e.preventDefault(); handleCellClick(r, c); }}
                       onClick={() => handleCellClick(r, c)}
                       className={`w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9 relative border border-gray-400 flex items-center justify-center select-none ${
                         isBlack ? "cursor-default" : "cursor-pointer"
