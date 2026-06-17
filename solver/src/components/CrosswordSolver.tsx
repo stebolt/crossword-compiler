@@ -279,7 +279,7 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
         });
         const next = nextCell(row, col, direction);
         if (next) setActiveCell(next);
-      } else if (e.key === "Backspace") {
+      } else if (e.key === "Backspace" || e.key === "Delete") {
         e.preventDefault();
         if (userGrid[row][col] !== "") {
           setUserGrid((prev) => {
@@ -579,21 +579,27 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
                   else if (isRevealed) bg = "bg-amber-200";
                   else if (isHighlighted) bg = "bg-blue-100";
 
+                  const cellClass = `w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9 relative border border-gray-400 flex items-center justify-center select-none ${bg}`;
+
+                  if (isBlack) {
+                    return <div key={c} className={cellClass} />;
+                  }
+
+                  // Use <button> so iOS Safari treats the click as a trusted
+                  // activation event and shows the virtual keyboard.
                   return (
-                    <div
+                    <button
                       key={c}
-                      onTouchEnd={(e) => { e.preventDefault(); handleCellClick(r, c); }}
+                      type="button"
                       onClick={() => handleCellClick(r, c)}
-                      className={`w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9 relative border border-gray-400 flex items-center justify-center select-none ${
-                        isBlack ? "cursor-default" : "cursor-pointer"
-                      } ${bg}`}
+                      className={`${cellClass} cursor-pointer p-0 focus:outline-none`}
                     >
-                      {number !== undefined && !isBlack && (
+                      {number !== undefined && (
                         <span className="absolute top-0 left-0.5 text-[6px] sm:text-[7px] lg:text-[8px] leading-none font-medium text-gray-500">
                           {number}
                         </span>
                       )}
-                      {!isBlack && letter && (
+                      {letter && (
                         <span
                           className={`text-[9px] sm:text-[12px] lg:text-[15px] font-bold leading-none ${
                             isActive ? "text-white" : "text-gray-900"
@@ -607,7 +613,7 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
                           <line x1="1.5" y1="8.5" x2="8.5" y2="1.5" stroke="rgb(239,68,68)" strokeWidth="1.2" strokeLinecap="round" />
                         </svg>
                       )}
-                    </div>
+                    </button>
                   );
                 })}
               </div>
