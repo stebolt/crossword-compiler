@@ -226,7 +226,8 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
   const handleCellClick = useCallback(
     (row: number, col: number) => {
       if (grid[row][col] === "#") return;
-      hiddenInputRef.current?.focus();
+      gridRef.current?.focus();       // desktop: captures keyboard via onKeyDown
+      hiddenInputRef.current?.focus(); // mobile: focuses visible input → shows keyboard
 
       setCheckMode("off");
 
@@ -250,6 +251,7 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
 
   const handleClueClick = useCallback(
     (clue: Clue, dir: Direction) => {
+      gridRef.current?.focus();
       hiddenInputRef.current?.focus();
       setDirection(dir);
       for (let i = 0; i < clue.length; i++) {
@@ -404,37 +406,6 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">
-      {/* Hidden input captures mobile keyboard input when a cell is active */}
-      {/*
-        Hidden input — must be within the viewport (iOS Safari won't show the
-        keyboard for off-screen elements). font-size:16px prevents iOS zoom.
-        tabIndex={-1} keeps it out of the tab order.
-      */}
-      <input
-        ref={hiddenInputRef}
-        tabIndex={-1}
-        type="text"
-        inputMode="text"
-        autoComplete="off"
-        autoCorrect="off"
-        autoCapitalize="characters"
-        spellCheck={false}
-        onKeyDown={handleKeyDown}
-        onChange={handleMobileInput}
-        aria-hidden="true"
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "1px",
-          height: "1px",
-          opacity: 0,
-          fontSize: "16px",
-          border: "none",
-          padding: 0,
-          outline: "none",
-        }}
-      />
       {pendingConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setPendingConfirm(null)}>
           <div className="bg-gray-800 rounded-lg shadow-xl p-5 w-72 border border-gray-700" onClick={e => e.stopPropagation()}>
@@ -642,6 +613,24 @@ export function CrosswordSolver({ crossword, userId, userEmail, initialProgress 
           ) : (
             <p className="text-sm text-gray-500">Select a cell to see the clue.</p>
           )}
+          {/* Always-rendered input so ref is valid before first cell tap.
+              Visible so iOS has no reason to suppress keyboard on focus. */}
+          <input
+            ref={hiddenInputRef}
+            type="text"
+            inputMode="text"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="characters"
+            spellCheck={false}
+            placeholder={activeCell ? "Type here…" : "Select a cell above"}
+            onKeyDown={handleKeyDown}
+            onChange={handleMobileInput}
+            className={`mt-2 w-full px-3 py-2 rounded border text-sm text-gray-100 placeholder-gray-500 bg-gray-700 focus:outline-none transition-colors ${
+              activeCell ? "border-gray-500 focus:border-blue-500" : "border-gray-700 opacity-40 pointer-events-none"
+            }`}
+            style={{ fontSize: "16px" }}
+          />
         </div>
 
         {/* Mobile: tabbed clue lists */}
