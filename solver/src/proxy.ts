@@ -26,6 +26,7 @@ export async function proxy(request: NextRequest) {
   if (!user && request.nextUrl.pathname.startsWith('/compile')) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
+    url.searchParams.set('next', request.nextUrl.pathname);
     return NextResponse.redirect(url);
   }
 

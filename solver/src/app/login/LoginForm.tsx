@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
 export default function LoginForm() {
-  const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -21,7 +21,8 @@ export default function LoginForm() {
       setError(error.message);
       setLoading(false);
     } else {
-      router.push('/compile');
+      // Full page load so the middleware sees the fresh session cookie
+      window.location.href = searchParams.get('next') ?? '/';
     }
   }
 
